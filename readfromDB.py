@@ -16,7 +16,7 @@ class handlerwithsql(object):
         sql = 'SELECT id, comment_text FROM comment'
         try:
             # Execute the SQL command
-            read_count = cur.execute(sql)
+            self.read_count = cur.execute(sql)
             read_result = cur.fetchall()
             return read_result
 

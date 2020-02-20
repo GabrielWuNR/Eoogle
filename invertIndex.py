@@ -17,6 +17,7 @@ class generateIndex():
 
     def read_from_DB(self):
         comment_dict = self.read_DB.read2dict()
+        self.total_comment = self.read_DB.read_count
         self.read_DB.close_session()
         return comment_dict
 
@@ -44,13 +45,13 @@ class generateIndex():
                     invert_index[word][id].append(inx)
         return invert_index
 
-    def tfidf(self, invert_index, max_id):
+    def tfidf(self, invert_index):
         tfidf_index = defaultdict(dict)
         for term in invert_index:
             df = len(invert_index[term].keys())
             for id in invert_index[term]:
                 tf = len(invert_index[term][id])
-                score = (float)(1+math.log(tf,10)) * math.log(max_id / df, 10)
+                score = (float)(1+math.log(tf,10)) * math.log(self.total_comment / df, 10)
                 tfidf_index[term][id] = score
         return tfidf_index
 
@@ -65,7 +66,7 @@ if __name__ == '__main__':
     print(str(stop - start) + "s for invert index")
     start = time()
     # res 为tfidf， 格式为dict{term : dict {'id' : tfidf, 'id2' :tfidf....}}，
-    res = initial.tfidf(invert,1000)
+    res = initial.tfidf(invert)
     stop = time()
     print(str(stop - start) + "s for tfidf")
 
