@@ -56,7 +56,35 @@ class generateIndex():
         return tfidf_index
 
 
-    def lucene(self, invert_index):
+    def getInvertWithAvgdl(self):
+        invert_index = defaultdict(dict)
+        stem_dict = {}
+        ld = defaultdict(dict)
+        comment_list = self.read_from_DB()
+        for items in comment_list:
+            word_preprocess = []
+            word_stem = []
+            id = items['id']
+            word_preprocess += self.preprocess.cut_pun_lower_case_remov_stop_get_stem(items['comment_text'])
+            for word in word_preprocess:
+                if word in stem_dict:
+                    word_stem.append(stem_dict[word])
+                else:
+                    word_aft_stem = self.stemmer.stem(word)
+                    word_stem.append(word_aft_stem)
+                    stem_dict[word] = word_aft_stem
+            for inx, word in enumerate(word_stem):
+                if id not in invert_index[word]:
+                    invert_index[word][id] = [inx]
+                    ld[word][id] = len(word_preprocess)
+                else:
+                    invert_index[word][id].append(inx)
+                    ld[word][id] = len(word_preprocess)
+        return invert_index, ld
+ 
+
+
+    def lucene(self, invert_index, ld, boost=1, k_1 = 1.2, b = 0.75):
         """
         score(t,q,d) = Sigma_t^n( idf(t) * boost(t) * tfNorm(t,d) )
         idf(t): ln( 1 + (docCount-docFreq + 0.5)/(docFreq+0.5) )
@@ -72,9 +100,20 @@ class generateIndex():
         avgdl: 文檔集合中，所有查詢該字段的平均長度
 
         """
+        docCount = invert_index.length()
         lucene_index = defaultdict(dict)
+
         for term in invert_index:
-            df = len()
+    #        avgdl = sum([len(doc) for doc in ])
+            docFreq = len(invert_index[term].keys())
+            for i in ld[term]:
+                avgdl = sum[ld[term]] / len[ld[term]]
+            for id in invert_index[term]:
+                tf = len(invert_index[term][id])
+                tfNorm = tf * (k_1 + 1) / ( tf + k_1 * (1-b + b*(ld[term][id]/avgdl) ))
+                bmscore = docFreq * boost * tfNorm
+                lucene_index[term][id] = score
+        return lucene_index
 
 if __name__ == '__main__':
     #处理20000条评论1.7s，生成tfidf 0.2s
