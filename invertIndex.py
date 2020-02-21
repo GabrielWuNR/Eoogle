@@ -56,6 +56,26 @@ class generateIndex():
         return tfidf_index
 
 
+    def lucene(self, invert_index):
+        """
+        score(t,q,d) = Sigma_t^n( idf(t) * boost(t) * tfNorm(t,d) )
+        idf(t): ln( 1 + (docCount-docFreq + 0.5)/(docFreq+0.5) )
+            Where docCount: 文檔總數 docFreq: 含有文檔t 的數量
+        boost(t): 查詢權重. 不指定時爲 1
+        tfNorm(t, d): 使用BM25代替TF 算法:
+            tfNorm(t, d) = f(t,d) * (k+1) / ( f(t,d) + k1*(1-b+b*(|D|/avgdl) ) )
+
+        f(t,d) : 單詞t在文檔d中出現的次數
+        k1: 詞語頻率飽和度，越低單詞數量影響越小，一般在1.2-2.0， 默認1.2
+        b: 字段規約長度, 控制文本長度對結果的影響, 他的值在0-1直接之間，默認0.75
+        |D| :文檔d中查詢該字段的文本長度
+        avgdl: 文檔集合中，所有查詢該字段的平均長度
+
+        """
+        lucene_index = defaultdict(dict)
+        for term in invert_index:
+            df = len()
+
 if __name__ == '__main__':
     #处理20000条评论1.7s，生成tfidf 0.2s
     initial = generateIndex()
