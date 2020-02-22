@@ -17,15 +17,15 @@ from google.auth.transport.requests import Request
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
 # PI_SERVICE_NAME = 'youtube'
 # API_VERSION = 'v3'
-DEVELOPER_KEY = "AIzaSyD8_pDy2L_oV40zNe2UbU5tERzkj_OLk0o"
-'''
- DEVELOPER_KEYS =["AIzaSyAGDvhlrD4o7XNCeKuJeF6_HFVgnGOQCZk","AIzaSyCB5v28b4YZlVp5edOoqrA6X7l6_ioYVgU","AIzaSyBFCebEx6q46k10Irqmryodihs-FE2WIKc",
-                "AIzaSyD8_pDy2L_oV40zNe2UbU5tERzkj_OLk0o","AIzaSyAdJ_-t2lBi4SbAYA2J7oicMahQGG1iYO4","AIzaSyAacmtWmDb8DvCgSn9wOpR1cCcp4oIkdX0",
-                "AIzaSyDODAZZJRpcC-eSjNhR4Q2o8Amf8RYX54U","AIzaSyBOQ0lEdrQOkKGdhuYIy_oUWhZ-N-4WkM4","AIzaSyCxq1DrX96QCFOyx9g1_G6o6VncRukjNhg",
-                "AIzaSyBbIR_ep9Ro1RXLHpDgByXytiIfp-rPARo","AIzaSyATjrtG_KfDu2xKrLOLFulq31XPudLEl9M"]
+DEVELOPER_KEY = "AIzaSyCk6K5GlgnV0Y5MJKbsPcG7E2H6KZO0G34"
+
+MAIN_KEYS =["AIzaSyCT5uLLYlL63AIgnEbQdUiI3A3JLD0kml0","AIzaSyAhXGA3itr7HLvWhyGOomlG9mNjpGj6_HI","AIzaSyBTHOTEH7tNaw69dwQu14Ni94hERf4NWLI",
+            "AIzaSyAa1RC9SwX1BTJRCmGZJWlz5zMfjQk9a0w","AIzaSyCrMSKNu9hjRR9WTvCA6AAKw6KLgU-UEf4","AIzaSyBHsOxi7FHAMf-PykF1uuBVVabRDW-afic",
+            "AIzaSyCI5bGFBL7BUDzky0RHI9al4u4A3pheu38","AIzaSyBBCS7avE6NlJ-dlTbJ4wziXENW8QjMMUY","AIzaSyDEK47HzxiI2fYUjYYArCd1dEgPU2INcvI",
+            "AIzaSyBzQrbPLx0bOXgp0MtTIuFbQPUkINgPiJc"]
 
 
-'''
+
 
 
 
@@ -82,7 +82,7 @@ class Handler2sql(object):
     # comments_writer.writerow(list(row))
     def get_videos(self, service, response):
        video = {}
-       for item in response['items']:
+       for item in response:
            video_id = item['id']
            # if video_id in id_list:
            #     continue
@@ -153,7 +153,7 @@ class Handler2sql(object):
             print("read error of commentid")
         cur = self.connent.cursor()
         # id_list = ['28QYy8lrww8', 'AqtooBbxuaw', 'eYSmNP3woow', 'KiGsZACs9n4', 'XQ-iQreCkHc']
-        for item in response['items']:
+        for item in response:
             video_id = item['id']
             # if video_id in id_list:
             #     continue
@@ -213,11 +213,11 @@ class Handler2sql(object):
 
 
 
-    def pullMostPopulur(self, numberOfVideo):
+    def pullMostPopulur(self, response):
         sql = ''
 
-        response = self.service.videos().list(part="snippet", chart="mostPopular", locale="GB",
-                                          maxResults=numberOfVideo).execute()
+        # response = self.service.videos().list(part="snippet", chart="mostPopular", locale="GB",
+        #                                   maxResults=numberOfVideo).execute()
         result_list = self.search_videos_by_id(self.service, response)
         cur = self.connent.cursor()
         aaa=0
@@ -253,11 +253,33 @@ class Handler2sql(object):
             
             '''
 
+    def pullMostPopularReponse(self, numberOfVideo):
+        response = self.service.videos().list(part="snippet", chart="mostPopular", locale="GB",
+                                              maxResults=numberOfVideo).execute()
+        return response
+
+
 
 
 if __name__ == '__main__':
-      test = Handler2sql(DEVELOPER_KEY, SCOPES, 'Eoogle')
-      test.pullMostPopulur(6)
+    test = Handler2sql(DEVELOPER_KEY, SCOPES, 'Eoogle')
+    response = test.pullMostPopularReponse(30)
+    responses = response['items']
+    len_responses = len(responses)
+    for i in range(3):
+        start = start * i
+        if start > len_responses - 1:
+            pass
+        end = start + 3
+        if end > len_responses:
+            end = len_responses
+        sub_response = responses[start:end]
+        now_key = MAIN_KEYS[i]
+        sub_test = Handler2sql(now_key, SCOPES, 'Eoogle')
+        sub_test.pullMostPopulur(sub_response)
+
+
+
 
     # When running locally, disable OAuthlib's HTTPs verification. When
     # running in production *do not* leave this option enabled.
