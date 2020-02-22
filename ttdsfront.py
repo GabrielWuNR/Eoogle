@@ -17,12 +17,13 @@ from google.auth.transport.requests import Request
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
 # PI_SERVICE_NAME = 'youtube'
 # API_VERSION = 'v3'
-DEVELOPER_KEY = "AIzaSyCk6K5GlgnV0Y5MJKbsPcG7E2H6KZO0G34"
+DEVELOPER_KEY = "AIzaSyDkBAadd6Hz_Traj5uj65jv80zYNWJfT1g"
 
-MAIN_KEYS =["AIzaSyCT5uLLYlL63AIgnEbQdUiI3A3JLD0kml0","AIzaSyAhXGA3itr7HLvWhyGOomlG9mNjpGj6_HI","AIzaSyBTHOTEH7tNaw69dwQu14Ni94hERf4NWLI",
-            "AIzaSyAa1RC9SwX1BTJRCmGZJWlz5zMfjQk9a0w","AIzaSyCrMSKNu9hjRR9WTvCA6AAKw6KLgU-UEf4","AIzaSyBHsOxi7FHAMf-PykF1uuBVVabRDW-afic",
-            "AIzaSyCI5bGFBL7BUDzky0RHI9al4u4A3pheu38","AIzaSyBBCS7avE6NlJ-dlTbJ4wziXENW8QjMMUY","AIzaSyDEK47HzxiI2fYUjYYArCd1dEgPU2INcvI",
-            "AIzaSyBzQrbPLx0bOXgp0MtTIuFbQPUkINgPiJc"]
+MAIN_KEYS =["AIzaSyA7BedC3imzV2cgd4zfczRMU2iFoYRlieo","AIzaSyDsjJayWYelF3cGv5UpYRpI7BdvO3Y0CWs","AIzaSyAPes7cPHRhh3N9nEgYWiYUJe6yr2T70Yg",
+            "AIzaSyB3Hn0bU_L2gE_ZVRDtg4LnyWeaVaqk5Qc","AIzaSyBcWfCLz7b_SLrvw1daP79BF6GIzS4tcUI","AIzaSyDXa7c4QT_7j7eLwQhe2J76rx4sVxYX5mY",
+            "AIzaSyD5xwcZne_TsNSHGBuNYxMwJvF6W1peqDg","AIzaSyAXDUYFUUVy0LR833KL7AdIh7BKA9ZmVeQ","AIzaSyBYAWRfgGPxHSLDY1QbdDU05Rp2hno1V2o",
+            "AIzaSyAJ4IjfL7oUL8bEZvdotvBmjUujnqKfVAM","AIzaSyAX1ckLg5nMT2oxhOlPlzDJSx3bmSab4Ms","AIzaSyAyOInQvijzyH3el01teKyOXrgecvD4GYk",
+            "AIzaSyAdJ_-t2lBi4SbAYA2J7oicMahQGG1iYO4","AIzaSyCWh82bmXvdoKcAWF5RTaE4dFUGVuwcDuI","AIzaSyCGvPWyUhKBND3PLfHdTVCban2Bh5_Wc4I"]
 
 
 
@@ -266,11 +267,11 @@ if __name__ == '__main__':
     response = test.pullMostPopularReponse(30)
     responses = response['items']
     len_responses = len(responses)
-    for i in range(10):
-        start = 3 * i
+    for i in range(15):
+        start = 2 * i
         if start > len_responses - 1:
             pass
-        end = start + 3
+        end = start + 2
         if end > len_responses:
             end = len_responses
         sub_response = responses[start:end]
