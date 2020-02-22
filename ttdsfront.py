@@ -267,7 +267,7 @@ if __name__ == '__main__':
     responses = response['items']
     len_responses = len(responses)
     for i in range(10):
-        start = start * i
+        start = 3 * i
         if start > len_responses - 1:
             pass
         end = start + 3
