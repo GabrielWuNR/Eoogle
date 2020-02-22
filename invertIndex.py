@@ -106,13 +106,14 @@ class generateIndex():
         for term in invert_index:
     #        avgdl = sum([len(doc) for doc in ])
             docFreq = len(invert_index[term].keys())
+            idf = math.log(1 + (docCount-docFreq+0.5)/(docFreq+0.5), 10)  
             for i in ld[term]:
                 avgdl = sum[ld[term]] / len[ld[term]]
             for id in invert_index[term]:
                 tf = len(invert_index[term][id])
                 tfNorm = tf * (k_1 + 1) / ( tf + k_1 * (1-b + b*(ld[term][id]/avgdl) ))
-                bmscore = docFreq * boost * tfNorm
-                lucene_index[term][id] = score
+                bmscore = idf * boost * tfNorm
+                lucene_index[term][id] = bmscore
         return lucene_index
 
 if __name__ == '__main__':
