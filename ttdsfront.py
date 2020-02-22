@@ -266,7 +266,7 @@ if __name__ == '__main__':
     response = test.pullMostPopularReponse(30)
     responses = response['items']
     len_responses = len(responses)
-    for i in range(3):
+    for i in range(10):
         start = start * i
         if start > len_responses - 1:
             pass
