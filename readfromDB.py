@@ -1,3 +1,5 @@
+import json
+
 import pymysql
 import os
 
@@ -5,25 +7,27 @@ class handlerwithsql(object):
 
     def __init__(self):
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-        #connect to mysql
-        self.connect = pymysql.connect(host='databasetry.c98rtvjmqwke.eu-west-2.rds.amazonaws.com', port = 3306,
-                                       user='admin', passwd='12345678', db='eoogle', charset='utf8', cursorclass=pymysql.cursors.DictCursor)
+        # connect to mysql
+        self.connect = pymysql.connect(host='databasetry.c98rtvjmqwke.eu-west-2.rds.amazonaws.com', port=3306,
+                                       user='admin', passwd='12345678', db='eoogle', charset='utf8',
+                                       cursorclass=pymysql.cursors.DictCursor)
         print("Initilized successfully")
 
-
-    def read2dict(self):
+    def read2dict(self,sql):
         cur = self.connect.cursor()
-        sql = 'SELECT id, comment_text FROM comment'
+        #sql = 'SELECT id, comment_text FROM comment'
         try:
             # Execute the SQL command
             self.read_count = cur.execute(sql)
             read_result = cur.fetchall()
+           # print(read_result)
             return read_result
 
         except:
             # Rollback in case there is any error
             print("Read error\n")
             self.connect.rollback()
+
 
 
     def search4video(self):
@@ -33,8 +37,8 @@ class handlerwithsql(object):
         #Search content can be gained from keyboard or a whole list
         #search_content = input('输入需要搜索的comment_Id：')
         #Transform the input list into a tuple string then batch search
-        search_content = tuple(['1','2','3'])
-        sql = 'SELECT videoid FROM comment WHERE id in' + str(search_content)
+
+        sql = 'SELECT videoid FROM video '
         try:
             # Execute the SQL command
             search_count = cur.execute(sql)
@@ -50,11 +54,18 @@ class handlerwithsql(object):
             self.connect.rollback()
 
         return video_id
-
     def close_session(self):
         self.connect.close()
 
 if __name__ == '__main__':
+    SQL1='SELECT id, comment_text FROM comment'
+    SQL1 = 'SELECT  videotitle, comment_text  FROM eoogle.comment C ,eoogle.video V where C.videoid=V.videoid order by likecount desc;'
     test = handlerwithsql()
-    test.read2dict()
-    test.search4video()
+    readdict=test.read2dict(SQL1)
+    readjson = json.dumps(readdict, indent=4)
+    print(readjson)
+    videoid = test.search4video()
+    with open("likecountorder.json", 'w') as f:
+        f.write(readjson)
+        # ignore it  just use readdict
+
