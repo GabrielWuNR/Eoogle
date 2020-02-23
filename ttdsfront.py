@@ -12,21 +12,22 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import keyprocess
 
 # CLIENT_SECRETS_FILE = "client_secret_544508090807-gb0ris16m711fnb0n4qgq5aqq1qkeabv.apps.googleusercontent.com.json"
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
 # PI_SERVICE_NAME = 'youtube'
 # API_VERSION = 'v3'
-DEVELOPER_KEY = "AIzaSyD8_pDy2L_oV40zNe2UbU5tERzkj_OLk0o"
-'''
- DEVELOPER_KEYS =["AIzaSyAGDvhlrD4o7XNCeKuJeF6_HFVgnGOQCZk","AIzaSyCB5v28b4YZlVp5edOoqrA6X7l6_ioYVgU","AIzaSyBFCebEx6q46k10Irqmryodihs-FE2WIKc",
-                "AIzaSyD8_pDy2L_oV40zNe2UbU5tERzkj_OLk0o","AIzaSyAdJ_-t2lBi4SbAYA2J7oicMahQGG1iYO4","AIzaSyAacmtWmDb8DvCgSn9wOpR1cCcp4oIkdX0",
-                "AIzaSyDODAZZJRpcC-eSjNhR4Q2o8Amf8RYX54U","AIzaSyBOQ0lEdrQOkKGdhuYIy_oUWhZ-N-4WkM4","AIzaSyCxq1DrX96QCFOyx9g1_G6o6VncRukjNhg",
-                "AIzaSyBbIR_ep9Ro1RXLHpDgByXytiIfp-rPARo","AIzaSyATjrtG_KfDu2xKrLOLFulq31XPudLEl9M"]
-
-
-'''
-
+# DEVELOPER_KEY = "AIzaSyDkBAadd6Hz_Traj5uj65jv80zYNWJfT1g"
+#
+# MAIN_KEYS =["AIzaSyA7BedC3imzV2cgd4zfczRMU2iFoYRlieo","AIzaSyDsjJayWYelF3cGv5UpYRpI7BdvO3Y0CWs","AIzaSyAPes7cPHRhh3N9nEgYWiYUJe6yr2T70Yg",
+#             "AIzaSyB3Hn0bU_L2gE_ZVRDtg4LnyWeaVaqk5Qc","AIzaSyBcWfCLz7b_SLrvw1daP79BF6GIzS4tcUI","AIzaSyDXa7c4QT_7j7eLwQhe2J76rx4sVxYX5mY",
+#             "AIzaSyD5xwcZne_TsNSHGBuNYxMwJvF6W1peqDg","AIzaSyAXDUYFUUVy0LR833KL7AdIh7BKA9ZmVeQ","AIzaSyBYAWRfgGPxHSLDY1QbdDU05Rp2hno1V2o",
+#             "AIzaSyAJ4IjfL7oUL8bEZvdotvBmjUujnqKfVAM","AIzaSyAX1ckLg5nMT2oxhOlPlzDJSx3bmSab4Ms","AIzaSyAyOInQvijzyH3el01teKyOXrgecvD4GYk",
+#             "AIzaSyAdJ_-t2lBi4SbAYA2J7oicMahQGG1iYO4","AIzaSyCWh82bmXvdoKcAWF5RTaE4dFUGVuwcDuI","AIzaSyCGvPWyUhKBND3PLfHdTVCban2Bh5_Wc4I"]
+DEVELOPER_KEY = []
+MAIN_KEYS = []
+keyprocess.getkeys(DEVELOPER_KEY, MAIN_KEYS)
 
 
 
@@ -41,6 +42,8 @@ class Handler2sql(object):
         self.connent = pymysql.connect(host='databasetry.c98rtvjmqwke.eu-west-2.rds.amazonaws.com', user='admin', passwd='12345678', db='eoogle')
         print("Initilized successfully")
 
+    def setkey(self, key):
+        self.key = key
 
     def get_video_comments(self, service, **kwargs):
         comments = []
@@ -82,7 +85,7 @@ class Handler2sql(object):
     # comments_writer.writerow(list(row))
     def get_videos(self, service, response):
        video = {}
-       for item in response['items']:
+       for item in response:
            video_id = item['id']
            # if video_id in id_list:
            #     continue
@@ -153,7 +156,7 @@ class Handler2sql(object):
             print("read error of commentid")
         cur = self.connent.cursor()
         # id_list = ['28QYy8lrww8', 'AqtooBbxuaw', 'eYSmNP3woow', 'KiGsZACs9n4', 'XQ-iQreCkHc']
-        for item in response['items']:
+        for item in response:
             video_id = item['id']
             # if video_id in id_list:
             #     continue
@@ -213,11 +216,11 @@ class Handler2sql(object):
 
 
 
-    def pullMostPopulur(self, numberOfVideo):
+    def pullMostPopulur(self, response):
         sql = ''
 
-        response = self.service.videos().list(part="snippet", chart="mostPopular", locale="GB",
-                                          maxResults=numberOfVideo).execute()
+        # response = self.service.videos().list(part="snippet", chart="mostPopular", locale="GB",
+        #                                   maxResults=numberOfVideo).execute()
         result_list = self.search_videos_by_id(self.service, response)
         cur = self.connent.cursor()
         aaa=0
@@ -253,11 +256,33 @@ class Handler2sql(object):
             
             '''
 
+    def pullMostPopularReponse(self, numberOfVideo):
+        response = self.service.videos().list(part="snippet", chart="mostPopular", locale="GB",
+                                              maxResults=numberOfVideo).execute()
+        return response
+
+
 
 
 if __name__ == '__main__':
-      test = Handler2sql(DEVELOPER_KEY, SCOPES, 'Eoogle')
-      test.pullMostPopulur(6)
+    test = Handler2sql(DEVELOPER_KEY[0], SCOPES, 'Eoogle')
+    response = test.pullMostPopularReponse(50)
+    responses = response['items']
+    len_responses = len(responses)
+    for i in range(50):
+        start = i
+        if start > len_responses - 1:
+            pass
+        end = start + 1
+        if end > len_responses:
+            end = len_responses
+        sub_response = responses[start:end]
+        now_key = MAIN_KEYS[i]
+        sub_test = Handler2sql(now_key, SCOPES, 'Eoogle')
+        sub_test.pullMostPopulur(sub_response)
+
+
+
 
     # When running locally, disable OAuthlib's HTTPs verification. When
     # running in production *do not* leave this option enabled.
