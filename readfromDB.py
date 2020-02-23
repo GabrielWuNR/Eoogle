@@ -4,6 +4,7 @@ import os
 class handlerwithsql(object):
 
     def __init__(self):
+        self.read_count = 0
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
         #connect to mysql
         self.connect = pymysql.connect(host='databasetry.c98rtvjmqwke.eu-west-2.rds.amazonaws.com', port = 3306,
@@ -24,6 +25,7 @@ class handlerwithsql(object):
             # Rollback in case there is any error
             print("Read error\n")
             self.connect.rollback()
+
 
 
     def search4video(self):
@@ -53,6 +55,8 @@ class handlerwithsql(object):
 
     def close_session(self):
         self.connect.close()
+
+
 
 if __name__ == '__main__':
     test = handlerwithsql()
