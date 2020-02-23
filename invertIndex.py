@@ -1,5 +1,5 @@
-#This is the python file to generate the invert index
-#需要的库： nltk, collections, 确保invertIndex.py, preprocess.py, readfromDB.py在同一目录
+# This is the python file to generate the invert index
+# 需要的库： nltk, collections, 确保invertIndex.py, preprocess.py, readfromDB.py在同一目录
 import os
 import math
 from preprocess import preprocess
@@ -7,6 +7,7 @@ from time import time
 from collections import defaultdict
 from nltk.stem import PorterStemmer
 import readfromDB
+
 
 class generateIndex():
     def __init__(self):
@@ -21,7 +22,7 @@ class generateIndex():
         self.read_DB.close_session()
         return comment_dict
 
-    #get invert index dictionary of which the key is key words in getWordList()
+    # get invert index dictionary of which the key is key words in getWordList()
     def getInvert(self):
         invert_index = defaultdict(dict)
         stem_dict = {}
@@ -51,10 +52,9 @@ class generateIndex():
             df = len(invert_index[term].keys())
             for id in invert_index[term]:
                 tf = len(invert_index[term][id])
-                score = (float)(1+math.log(tf,10)) * math.log(self.total_comment / df, 10)
+                score = (float)(1 + math.log(tf, 10)) * math.log(self.total_comment / df, 10)
                 tfidf_index[term][id] = score
         return tfidf_index
-
 
     def getInvertWithAvgdl(self):
         invert_index = defaultdict(dict)
@@ -81,10 +81,8 @@ class generateIndex():
                     invert_index[word][id].append(inx)
                     ld[word][id] = len(word_preprocess)
         return invert_index, ld
- 
 
-
-    def lucene(self, invert_index, ld, boost=1, k_1 = 1.2, b = 0.75):
+    def lucene(self, invert_index, ld, boost=1, k_1=1.2, b=0.75):
         """
         score(t,q,d) = Sigma_t^n( idf(t) * boost(t) * tfNorm(t,d) )
         idf(t): ln( 1 + (docCount-docFreq + 0.5)/(docFreq+0.5) )
@@ -104,20 +102,21 @@ class generateIndex():
         lucene_index = defaultdict(dict)
 
         for term in invert_index:
-    #        avgdl = sum([len(doc) for doc in ])
+            #        avgdl = sum([len(doc) for doc in ])
             docFreq = len(invert_index[term].keys())
-            idf = math.log(1 + (docCount-docFreq+0.5)/(docFreq+0.5), 10)  
+            idf = math.log(1 + (docCount - docFreq + 0.5) / (docFreq + 0.5), 10)
             for i in ld[term]:
                 avgdl = sum[ld[term]] / len[ld[term]]
             for id in invert_index[term]:
                 tf = len(invert_index[term][id])
-                tfNorm = tf * (k_1 + 1) / ( tf + k_1 * (1-b + b*(ld[term][id]/avgdl) ))
+                tfNorm = tf * (k_1 + 1) / (tf + k_1 * (1 - b + b * (ld[term][id] / avgdl)))
                 bmscore = idf * boost * tfNorm
                 lucene_index[term][id] = bmscore
         return lucene_index
 
+
 if __name__ == '__main__':
-    #处理20000条评论1.7s，生成tfidf 0.2s
+    # 处理20000条评论1.7s，生成tfidf 0.2s
     initial = generateIndex()
     start = time()
     # invert 为反向索引，格式为dict{ term: dict{'id' : [pos1,pos2,pos3....]}}，只需要把这个存到mongoDB,其他逻辑不用动
@@ -129,4 +128,3 @@ if __name__ == '__main__':
     res = initial.tfidf(invert)
     stop = time()
     print(str(stop - start) + "s for tfidf")
-

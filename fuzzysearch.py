@@ -13,7 +13,7 @@ class Fuzzy():
             self.tree = pybktree_mo.BKTree(pybktree_mo.hamming_distance, self.dictionary)
 
     def bktreeSearch(self, query):
-        if len(query) <= 3:
+        if len(query) <= 4:
             limit = 1
         else:
             limit = 2

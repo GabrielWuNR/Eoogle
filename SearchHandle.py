@@ -1,5 +1,6 @@
 import pandas as pd
 import readfromDB
+import fuzzysearch
 import json
 import pymongo
 from pymongo import MongoClient
@@ -8,15 +9,14 @@ import pymysql
 import os
 
 test_dict = {
-    "term1"
-        "docinfo" :{
+    "term1": {
         "docid1": {
             "pos": [1, 2, 3, 4, 5, 6],
             "score": 0.123
         },
         "docid2": {
             "pos": [2, 3, 4, 5, 6, 7],
-            "socre": 0.456
+            "score": 0.456
         }
     },
     "term2": {
@@ -26,7 +26,7 @@ test_dict = {
         },
         "docid4": {
             "pos": [22, 33, 44, 55, 66, 77],
-            "socre": 0.987
+            "score": 0.987
         }
     },
     "term3": {
@@ -36,11 +36,10 @@ test_dict = {
         },
         "docid1": {
             "pos": [22, 33, 44, 55, 66, 77],
-            "socre": 0.987
+            "score": 0.987
         }
     }
 }
-
 
 
 class SearchHandle(object):
@@ -49,14 +48,13 @@ class SearchHandle(object):
         需要在這裏分別接入 mysql 和 dymanoDB 的數據庫 然後再進行操作
         """
         self.sqlhandle = readfromDB.handlerwithsql()
-
-
+        self.fuzzy = fuzzysearch.Fuzzy()
 
         print("Initilized successfully")
 
     def readFromMysql(self, sql):
         comment_dict = self.sqlhandle.read2dict(sql)
-        self.total_comment = self.sqlhandle.read_count
+       # self.total_comment = self.sqlhandle.read_count
         self.sqlhandle.close_session()
         return comment_dict
 
@@ -74,7 +72,10 @@ class SearchHandle(object):
         term : 在組合之前需要初始化的term
         return : term 對應的DataFrame
         """
-        result = self.__readFromNosql(term)
+        try:
+            result = self.__readFromNosql(term)
+        except :
+            result = self.__readFromNosql(self.fuzzy.bktreeSearch(term)[1])
         return pd.DataFrame.from_dict(result)
 
     def getOneResult(self, term_df):
@@ -82,6 +83,8 @@ class SearchHandle(object):
 
     def getANDResult(self, term_df1, term_df2):
         result = (term_df1 + term_df2).dropna(axis=1)
+        for index, row in result.iteritems():
+            row['pos'].sort()
         return result
 
     def getANDNeiResult(self, term_df1, term_df2):
@@ -146,10 +149,10 @@ class SearchHandle(object):
              }
         """
         __result = result.sort_values(axis=1, by='score')
-        for index, row in result.iteritems():
+        deliver = []
+        for index, row in __result.iteritems():
             commentid = index
-            sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id = '"+commentid+"'"
-            self.readFromMysql(sql)
+            sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id = '" + commentid + "'"
+            deliver.append(self.readFromMysql(sql))
 
-
-
+        return deliver
