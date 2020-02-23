@@ -54,7 +54,7 @@ class SearchHandle(object):
 
     def readFromMysql(self, sql):
         comment_dict = self.sqlhandle.read2dict(sql)
-       # self.total_comment = self.sqlhandle.read_count
+        # self.total_comment = self.sqlhandle.read_count
         self.sqlhandle.close_session()
         return comment_dict
 
@@ -89,14 +89,16 @@ class SearchHandle(object):
 
     def getANDNeiResult(self, term_df1, term_df2):
         subresult = self.getANDResult(term_df1, term_df2)
-        result = pd.DataFrame().reindex_like(term_df1)
+        result = pd.DataFrame()
+        picklist = []
         for index, row in subresult.iteritems():
-            droplist = []
             for i in range(len(row["pos"]) - 2):
-                if row["pos"][i + 1] - row["pos"][i] == 1:
-                    if not (row["pos"][i + 1] in term_df2[index]["pos"]) and (row["pos"][i] in term_df1[index]["pos"]):
-                        droplist.append(index)
-            result = subresult.drop(columns=droplist)
+                if (row["pos"][i + 1] - row["pos"][i] == 1) and (row["pos"][i + 1] in term_df2[index]["pos"]) and (
+                        row["pos"][i] in term_df1[index]["pos"]):
+                    if index not in picklist:
+                        picklist.append(index)
+            result = subresult[picklist]
+            print(droplist)
         return result
 
     def getXORResult(self, term_df1, term_df2):
@@ -119,16 +121,22 @@ class SearchHandle(object):
     def getDisResult(self, term_df1, term_df2, distance):
         subresult = self.getANDResult(term_df1, term_df2)
         result = pd.DataFrame().reindex_like(term_df1)
+        picklist = []
         for index, row in subresult.iteritems():
-            droplist = []
             for i in range(len(row["pos"]) - 2):
-                if row["pos"][i + 1] - row["pos"][i] <= distance:
-                    if not ((row["pos"][i + 1] in term_df2[index]["pos"]) and (
-                            row["pos"][i] in term_df1[index]["pos"])) or (
-                            (row["pos"][i + 1] in term_df1[index]["pos"]) and (
-                            row["pos"][i] in term_df2[index]["pos"])):
-                        droplist.append(index)
-            result = subresult.drop(columns=droplist)
+                if row["pos"][i + 1] - row["pos"][i] <= distance and (
+                        ((row["pos"][i + 1] in term_df2[index]["pos"]) and (
+                                row["pos"][i] in term_df1[index]["pos"]
+                        )
+                        ) or (
+                                (row["pos"][i + 1] in term_df1[index]["pos"]) and (
+                                 row["pos"][i] in term_df2[index]["pos"]
+                        )
+                        )
+                ):
+                    if index not in picklist:
+                        picklist.append(index)
+            result = subresult[picklist]
         return result
 
     def finalize(self, result, mode='score'):
