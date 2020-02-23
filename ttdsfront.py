@@ -12,22 +12,22 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import keyprocess
 
 # CLIENT_SECRETS_FILE = "client_secret_544508090807-gb0ris16m711fnb0n4qgq5aqq1qkeabv.apps.googleusercontent.com.json"
 SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
 # PI_SERVICE_NAME = 'youtube'
 # API_VERSION = 'v3'
-DEVELOPER_KEY = "AIzaSyDkBAadd6Hz_Traj5uj65jv80zYNWJfT1g"
-
-MAIN_KEYS =["AIzaSyA7BedC3imzV2cgd4zfczRMU2iFoYRlieo","AIzaSyDsjJayWYelF3cGv5UpYRpI7BdvO3Y0CWs","AIzaSyAPes7cPHRhh3N9nEgYWiYUJe6yr2T70Yg",
-            "AIzaSyB3Hn0bU_L2gE_ZVRDtg4LnyWeaVaqk5Qc","AIzaSyBcWfCLz7b_SLrvw1daP79BF6GIzS4tcUI","AIzaSyDXa7c4QT_7j7eLwQhe2J76rx4sVxYX5mY",
-            "AIzaSyD5xwcZne_TsNSHGBuNYxMwJvF6W1peqDg","AIzaSyAXDUYFUUVy0LR833KL7AdIh7BKA9ZmVeQ","AIzaSyBYAWRfgGPxHSLDY1QbdDU05Rp2hno1V2o",
-            "AIzaSyAJ4IjfL7oUL8bEZvdotvBmjUujnqKfVAM","AIzaSyAX1ckLg5nMT2oxhOlPlzDJSx3bmSab4Ms","AIzaSyAyOInQvijzyH3el01teKyOXrgecvD4GYk",
-            "AIzaSyAdJ_-t2lBi4SbAYA2J7oicMahQGG1iYO4","AIzaSyCWh82bmXvdoKcAWF5RTaE4dFUGVuwcDuI","AIzaSyCGvPWyUhKBND3PLfHdTVCban2Bh5_Wc4I"]
-
-
-
-
+# DEVELOPER_KEY = "AIzaSyDkBAadd6Hz_Traj5uj65jv80zYNWJfT1g"
+#
+# MAIN_KEYS =["AIzaSyA7BedC3imzV2cgd4zfczRMU2iFoYRlieo","AIzaSyDsjJayWYelF3cGv5UpYRpI7BdvO3Y0CWs","AIzaSyAPes7cPHRhh3N9nEgYWiYUJe6yr2T70Yg",
+#             "AIzaSyB3Hn0bU_L2gE_ZVRDtg4LnyWeaVaqk5Qc","AIzaSyBcWfCLz7b_SLrvw1daP79BF6GIzS4tcUI","AIzaSyDXa7c4QT_7j7eLwQhe2J76rx4sVxYX5mY",
+#             "AIzaSyD5xwcZne_TsNSHGBuNYxMwJvF6W1peqDg","AIzaSyAXDUYFUUVy0LR833KL7AdIh7BKA9ZmVeQ","AIzaSyBYAWRfgGPxHSLDY1QbdDU05Rp2hno1V2o",
+#             "AIzaSyAJ4IjfL7oUL8bEZvdotvBmjUujnqKfVAM","AIzaSyAX1ckLg5nMT2oxhOlPlzDJSx3bmSab4Ms","AIzaSyAyOInQvijzyH3el01teKyOXrgecvD4GYk",
+#             "AIzaSyAdJ_-t2lBi4SbAYA2J7oicMahQGG1iYO4","AIzaSyCWh82bmXvdoKcAWF5RTaE4dFUGVuwcDuI","AIzaSyCGvPWyUhKBND3PLfHdTVCban2Bh5_Wc4I"]
+DEVELOPER_KEY = []
+MAIN_KEYS = []
+keyprocess.getkeys(DEVELOPER_KEY, MAIN_KEYS)
 
 
 
@@ -42,6 +42,8 @@ class Handler2sql(object):
         self.connent = pymysql.connect(host='databasetry.c98rtvjmqwke.eu-west-2.rds.amazonaws.com', user='admin', passwd='12345678', db='eoogle')
         print("Initilized successfully")
 
+    def setkey(self, key):
+        self.key = key
 
     def get_video_comments(self, service, **kwargs):
         comments = []
@@ -263,15 +265,15 @@ class Handler2sql(object):
 
 
 if __name__ == '__main__':
-    test = Handler2sql(DEVELOPER_KEY, SCOPES, 'Eoogle')
-    response = test.pullMostPopularReponse(30)
+    test = Handler2sql(DEVELOPER_KEY[0], SCOPES, 'Eoogle')
+    response = test.pullMostPopularReponse(50)
     responses = response['items']
     len_responses = len(responses)
-    for i in range(15):
-        start = 2 * i
+    for i in range(50):
+        start = i
         if start > len_responses - 1:
             pass
-        end = start + 2
+        end = start + 1
         if end > len_responses:
             end = len_responses
         sub_response = responses[start:end]
