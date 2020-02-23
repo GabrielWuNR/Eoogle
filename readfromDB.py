@@ -62,7 +62,7 @@ if __name__ == '__main__':
     SQL1 = 'SELECT  videotitle FROM eoogle.video V;'
     test = handlerwithsql()
     readdict=test.read2dict(SQL1)
- 
+    print(readdict)
     readjson = json.dumps(readdict, indent=1)
     #print(readjson)
     videoid = test.search4video()
