@@ -58,12 +58,13 @@ class handlerwithsql(object):
         self.connect.close()
 
 if __name__ == '__main__':
-    SQL1='SELECT id, comment_text FROM comment'
-    SQL1 = 'SELECT  videotitle, comment_text  FROM eoogle.comment C ,eoogle.video V where C.videoid=V.videoid order by likecount desc;'
+    #SQL1='SELECT id, comment_text FROM comment'
+    SQL1 = 'SELECT  videotitle FROM eoogle.video V;'
     test = handlerwithsql()
     readdict=test.read2dict(SQL1)
-    readjson = json.dumps(readdict, indent=4)
-    print(readjson)
+ 
+    readjson = json.dumps(readdict, indent=1)
+    #print(readjson)
     videoid = test.search4video()
     with open("likecountorder.json", 'w') as f:
         f.write(readjson)
