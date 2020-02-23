@@ -10,7 +10,6 @@
 # 		Developer_Key.append(key)
 # 	else:
 # 		Main_Key.append(key)
-import copy
 
 def getkeys(DEVELOPER_KEY, MAIN_KEYS):
 	keysfile = open("keys.txt")
@@ -23,9 +22,6 @@ def getkeys(DEVELOPER_KEY, MAIN_KEYS):
 			MAIN_KEYS.append(key.strip())
 		line_number += 1
 
-DEVELOPER_KEY = []
-MAIN_KEYS = []
-getkeys(DEVELOPER_KEY, MAIN_KEYS)
 
 
 
