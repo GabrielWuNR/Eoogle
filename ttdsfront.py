@@ -3,6 +3,9 @@ import googleapiclient
 import pymysql
 import cryptography
 import os
+import copy
+import concurrent.futures
+import time
 
 import pickle
 import csv
@@ -28,6 +31,7 @@ SCOPES = ['https://www.googleapis.com/auth/youtube.force-ssl']
 DEVELOPER_KEY = []
 MAIN_KEYS = []
 keyprocess.getkeys(DEVELOPER_KEY, MAIN_KEYS)
+responses = []
 
 
 
@@ -262,35 +266,31 @@ class Handler2sql(object):
         return response
 
 
+def parallel(i):
+    len_responses = len(responses)
+    start = i
+    if start > len_responses - 1:
+        pass
+    end = start + 1
+    if end > len_responses:
+        end = len_responses
+    sub_response = responses[start:end]
+    now_key = MAIN_KEYS[i]
+    sub_test = Handler2sql(now_key, SCOPES, 'Eoogle')
+    sub_test.pullMostPopulur(sub_response)
 
-
-if __name__ == '__main__':
+def main():
+    global responses
     test = Handler2sql(DEVELOPER_KEY[0], SCOPES, 'Eoogle')
     response = test.pullMostPopularReponse(50)
-    responses = response['items']
-    len_responses = len(responses)
-    for i in range(50):
-        start = i
-        if start > len_responses - 1:
-            pass
-        end = start + 1
-        if end > len_responses:
-            end = len_responses
-        sub_response = responses[start:end]
-        now_key = MAIN_KEYS[i]
-        sub_test = Handler2sql(now_key, SCOPES, 'Eoogle')
-        sub_test.pullMostPopulur(sub_response)
+    responses = copy.deepcopy(response['items'])
+    i = range(50)
+    start_time = time.time()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.map(parallel, i)
+    finish = time.time()
+    print('%d second' % (finish - start_time))
 
+if __name__ == '__main__':
+    main()
 
-
-
-    # When running locally, disable OAuthlib's HTTPs verification. When
-    # running in production *do not* leave this option enabled.
-    # os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-    # service = get_authenticated_service()
-    # response = service.videos().list(part="snippet", chart="mostPopular", locale="GB", maxResults=1).execute()
-    # # id_list = []
-    # # for one in response['items']:
-    # #     id_list.append(one['id'])
-    #
-    # search_videos_by_id(service, response)
