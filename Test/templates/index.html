@@ -60,15 +60,28 @@
 				</h1>
 			</header>
 			<div class="body" align="center">
-                mark
-				<input id="autoComplete" type="text" tabindex="1">
+                <form action="/search/" method="get">
+                    <input id ="autoComplete" type="text" name="q" autocomplete="off">
+                </form>
 				<div class="mode">
 					<h4>mode</h4>
 					<div class="toggele">
-						<div class="toggeler">Strict</div>
+						<div class="toggeler">Loose</div>
 					</div>
 				</div>
-				<div class="selection"></div>
+				{% block high_search%}
+        {% endblock %}
+        {% if error%}
+            {% for doc in docs%}
+            <div id="doc">
+                <ul id="navigation">
+                    <p><big><a href="{{doc.id}}" target="_blank">{{doc.title}}</a></big></p>
+                    <p>{{doc.comment}}</p>
+                </ul>
+            </div>
+            <br/>
+            {% endfor %}
+        {% endif %}
 			</div>
 			<footer class="footer">
 				<div class="copyrights">
@@ -76,7 +89,7 @@
 				</div>
 			</footer>
 		</div>
-		<script src="{% static 'js/autoComplete.min.js' %}"></script>
+		<script src="{% static 'js/autoComplete.js' %}"></script>
 		<script src="{% static 'js/index.js' %}"></script>
 	</body>
 
