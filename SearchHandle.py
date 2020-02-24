@@ -192,9 +192,10 @@ if __name__ == "__main__":
 
 
     start2 = time.time()
-    searchresult = searchservice.getOneResult(pytohn)
+    searchresult = searchservice.getANDResult(put, get)
     mid2 = time.time()
     print("the search time is: ", mid2 - start2)
-    print(searchresult)
+    print(searchservice.finalize(searchresult))
+
 
     #print(searchservice.finalize(searchresult))
