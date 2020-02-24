@@ -1,0 +1,224 @@
+import collections
+import SearchHandle
+from time import time
+from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
+import re
+
+class parse_search():
+    def __init__(self):
+        """
+        初始化数据库搜索模块
+        """
+        self.stemmer = PorterStemmer()
+        self.search = SearchHandle.SearchHandle()
+        self.stopWordList = stopwords.words('english')
+        self.stopDic = {}
+        for word in self.stopWordList:
+            self.stopDic[word] = 1
+        print("Initilized successfully")
+
+    def preprocess_query(self, query):
+        res = ''
+        remov_stop = [word for word in query.split() if word not in self.stopDic]
+        for word in remov_stop:
+            res+= word
+            res+= ' '
+        return res.rstrip(' ')
+
+    def preprocess_word(self, term):
+        term_cutpun = re.sub(r'[^\w\s]', '', term)
+        return self.stemmer.stem(term_cutpun.lower())
+
+    def deal_with_phase(self, queue, qword, opt):
+        term = ''
+        phase_terms = []
+        count_space = 0
+
+        #找第二个双引号，中间有空格无视掉
+        while(len(queue) > 0 and queue[0]!='"'):
+            if(queue[0]!=' '):
+                term += queue.popleft()
+            else:
+                count_space+=1
+                queue.popleft()
+                if term != '':
+                    phase_terms.append(self.preprocess_word(term))
+                term = ''
+
+        #增加最后一个词
+        if term != '':
+            phase_terms.append(self.preprocess_word(term))
+
+        #如果不符合格式，没有出现第二个双引号，全以OR搜索处理
+        if(len(queue) == 0):
+            print("no words need to be phased，use all OR search")
+            for word in phase_terms:
+                qword.append(self.search.initTerm(self.preprocess_word(word)))
+            for i in range(0, count_space):
+                opt.append('OR')
+
+        #如果符合格式，且遇见了双引号，去掉双引号，对双引号之间的词做邻居搜索
+        if(len(queue) > 0 and queue[0]=='"'):
+            queue.popleft()
+            if(len(phase_terms) == 1):
+                print("no words need to be phased")
+                qword.append(self.search.initTerm(phase_terms[0]))
+            else:
+                res = self.search.initTerm(phase_terms[0])
+                while len(phase_terms) > 1:
+                    del phase_terms[0]
+                    res = self.search.getANDNeiResult(res, self.search.initTerm(phase_terms[0]))
+                qword.append(res)
+
+    def deal_with_proximity(self, queue, qword, opt):
+        term = ''
+        distance = ''
+        count_space = 0
+        proximity_terms = []
+
+        if (len(queue) == 0):
+            print("just search a #\n")
+
+        #如果找不到左括号，判定用户正在输入数字，如果此时有空格判定无效输入直接跳出
+        #按原状态机方式进行搜索
+        while (len(queue) > 0 and queue[0] != '('):
+            if (queue[0] != ' '):
+                distance += queue.popleft()
+            else:
+                break
+
+        #如果还没找到左括号就结束了，把这个词放进搜索list,返回平常方法
+        if (len(queue) == 0 or queue[0] != '('):
+            qword.append(self.search.initTerm(self.preprocess_word(distance)))
+            return
+        else:
+            #如果找到了左括号，将左括号剔除
+            queue.popleft()
+
+        #进入距离搜索阶段，找右括号
+        while (len(queue) > 0 and queue[0] != ')'):
+            if (queue[0] == ','):
+                if term!='':
+                    proximity_terms.append(self.preprocess_word(term))
+                term = ''
+                while (queue[0] == ','):
+                    count_space += 1
+                    queue.popleft()
+            if (queue[0] == ' '):
+                queue.popleft()
+            else:
+                term += queue.popleft()
+        proximity_terms.append(self.preprocess_word(term))
+        term = ''
+        if (len(queue) == 0):
+            for word in proximity_terms:
+                qword.append(self.search.initTerm(word))
+            for i in range(0, count_space):
+                opt.append('OR')
+        else:
+            queue.popleft()
+            res = self.search.initTerm(proximity_terms[0])
+            while len(proximity_terms) > 1:
+                del proximity_terms[0]
+                res = self.search.getDisResult(res, self.search.initTerm(proximity_terms[0]), distance)
+            qword.append(res)
+
+
+    #judge the user input to get what type of search user want
+    def getSearch(self, query):
+        qword = []
+        opt = []
+
+        query = self.preprocess_query(query)
+
+        queue = collections.deque(query)
+        term = ''
+        flag = 'none'
+        while (len(queue) > 0):
+            temp = queue.popleft()
+            if temp == '#':
+                self.deal_with_proximity(queue, qword, opt)
+                flag = 'none'
+            elif temp == '"':
+                self.deal_with_phase(queue, qword, opt)
+                flag = 'none'
+
+            #空格的辨识，如果没有逻辑运算符就按OR处理
+            elif temp == ' ':
+                if flag == 'none' and len(queue) > 0:
+                    if term == 'AND':
+                        opt.append('AND')
+                        flag = 'AND'
+                        term = ''
+                    elif term == 'NOT' and flag == 'AND':
+                        opt[-1] = 'AND NOT'
+                        flag = 'NOT'
+                        term = ''
+                    elif term == 'NOT' and flag != 'AND':
+                        flag = 'none'
+                        qword.append(self.search.initTerm(self.preprocess_word(term)))
+                        term = ''
+                    elif term == 'OR':
+                        opt.append('OR')
+                        flag = 'OR'
+                        term = ''
+                    else:
+                        #如果此时没有逻辑状态自动补全OR
+                        if flag == 'none':
+                            if(len(queue) <= 3):
+                                opt.append('OR')
+                            elif len(queue)>3 and (queue[0] + queue[1] + queue[2])!='AND' and (queue[0] + queue[1])!='OR':
+                                opt.append('OR')
+                        if term != '':
+                            flag = 'none'
+                            qword.append(self.search.initTerm(self.preprocess_word(term)))
+                            term = ''
+                else:
+                    if term == 'NOT' and flag == 'AND':
+                        opt[-1] = 'AND NOT'
+                        flag = 'NOT'
+                        term = ''
+                    flag = 'none'
+                    if term!='':
+                        qword.append(self.search.initTerm(self.preprocess_word(term)))
+                    term = ''
+
+            #if we get a phrase search, we will store the result list in the
+            #term queue
+            else:
+                if(temp!=' '):
+                    term += temp
+
+        if term!='':
+            qword.append(self.search.initTerm(self.preprocess_word(term)))
+        print(qword)
+        print(opt)
+        res = qword[0]
+        while len(opt)>0:
+            del qword[0]
+            if opt[0] == 'AND NOT':
+                res = self.search.getXORResult(res, qword[0])
+            if opt[0] == 'AND':
+                res = self.search.getANDResult(res, qword[0])
+            if opt[0] == 'OR':
+                res = self.search.getORResult(res, qword[0])
+            del opt[0]
+
+        return self.search.finalize(res)
+
+
+
+
+
+if __name__ == '__main__':
+    # term_df1 = pd.DataFrame.from_dict(dict["term1"])
+    # term_df2 = pd.DataFrame.from_dict(dict["term2"])
+    # print(test.getANDNeiResult(term_df1, term_df2))
+    a = parse_search()
+    start = time()
+    res = a.getSearch('fuck AND bomb AND ruin')
+    stop = time()
+    print(res[0])
+    print(str(stop - start) + "s for search")
+    # a.getSearch('  #14(term1,term2)')
