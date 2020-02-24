@@ -90,7 +90,6 @@
                 {% if docs.has_previous %}
                     <li> <a href="?q={{ key }}&page={{ docs.previous_page_number }}">Previous page</a></li>
                 {% endif %}
-
                 <span class="current">Page {{ docs.number }} of {{ docs.paginator.num_pages }}</span>
                 {% if docs.has_next %}
                     <li><a href="?q={{ key }}&page={{ docs.next_page_number }}">Next Page</a></li>
