@@ -11,12 +11,12 @@ const autoCompletejs = new autoComplete({
       // Loading placeholder text
       document.querySelector("#autoComplete").setAttribute("placeholder", "Loading...");
       // Fetch External Data Source
-      const source = await fetch("static/db/test.json");
+      const source = await fetch("static/db/likecountorder.json");
       const data = await source.json();
       // Returns Fetched data
       return data;
     },
-    key: ["word"],
+    key: ["videotitle"],
   },
   sort: function (a, b) {
     if (a.match < b.match) {
@@ -38,10 +38,10 @@ const autoCompletejs = new autoComplete({
       return !!query.replace(/ /g, "").length && query !== "hamburger";
     },
   },
-  placeHolder: "Food & Drinks",
+  placeHolder: "Place Enter your input",
   selector: "#autoComplete",
   debounce: 0,
-  searchEngine: "strict",
+  searchEngine: "loose",
   highlight: true,
   maxResults: 5,
   resultsList: {
@@ -68,11 +68,9 @@ const autoCompletejs = new autoComplete({
   },
   onSelection: function (feedback) {
     document.querySelector("#autoComplete").blur();
-    const selection = feedback.selection.value.word;
-    // Render selected choice to selection div
-    document.querySelector(".selection").innerHTML = selection;
+    const selection = feedback.selection.value.videotitle;
     // Clear Input
-    document.querySelector("#autoComplete").value = "";
+    document.querySelector("#autoComplete").value = selection;
     // Change placeholder with the selected value
     document.querySelector("#autoComplete").setAttribute("placeholder", selection);
     // Concole log autoComplete data feedback
@@ -86,15 +84,15 @@ document.querySelector(".toggeler").addEventListener("click", function () {
   const toggele = document.querySelector(".toggele").style.justifyContent;
 
   if (toggele === "flex-start" || toggele === "") {
-    // Set Search Engine mode to Loose
-    document.querySelector(".toggele").style.justifyContent = "flex-end";
-    document.querySelector(".toggeler").innerHTML = "Loose";
-    autoCompletejs.searchEngine = "loose";
-  } else {
     // Set Search Engine mode to Strict
-    document.querySelector(".toggele").style.justifyContent = "flex-start";
+    document.querySelector(".toggele").style.justifyContent = "flex-end";
     document.querySelector(".toggeler").innerHTML = "Strict";
     autoCompletejs.searchEngine = "strict";
+  } else {
+    // Set Search Engine mode to Loose
+    document.querySelector(".toggele").style.justifyContent = "flex-start";
+    document.querySelector(".toggeler").innerHTML = "Loose";
+    autoCompletejs.searchEngine = "loose";
   }
 });
 
@@ -103,20 +101,17 @@ const action = function (action) {
   const github = document.querySelector(".github-corner");
   const title = document.querySelector("h1");
   const mode = document.querySelector(".mode");
-  const selection = document.querySelector(".selection");
   const footer = document.querySelector(".footer");
 
   if (action === "dim") {
     github.style.opacity = 1;
     title.style.opacity = 1;
     mode.style.opacity = 1;
-    selection.style.opacity = 1;
     footer.style.opacity = 1;
   } else {
     github.style.opacity = 0.1;
     title.style.opacity = 0.3;
     mode.style.opacity = 0.2;
-    selection.style.opacity = 0.1;
     footer.style.opacity = 0.1;
   }
 };

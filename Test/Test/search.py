@@ -2,6 +2,7 @@
 
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
+from django.shortcuts import render
 
 
 # 表单
@@ -12,8 +13,19 @@ def search_form(request):
 # 接收请求数据
 def search(request):
     request.encoding = 'utf-8'
+    context = {}
     if 'q' in request.GET and request.GET['q']:
-        message = 'Your search context is: ' + request.GET['q']
+        context['error'] = "True"
+        context['docs'] = [{
+            "id": "https://www.google.com",
+            "title": "EPCC",
+            "comment": "Student in EPCC"
+        },
+            {
+                "id": "https://www.epcc.ed.ac.uk/work-us",
+                "title": "Home Page",
+                "comment": "Accelerator, our on-demand computing service for business, brings leading edge supercomputing capability directly to your desktop. We are currently offering free trials of Accelerator. "
+            }]
     else:
-        message = 'You submited a blank page.'
-    return HttpResponse(message)
+        context['docs'] = ['You submited a blank page.']
+    return render(request, "index.html", context)

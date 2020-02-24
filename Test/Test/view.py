@@ -9,5 +9,5 @@ def hello(request):
     return render(request, 'hello.html', context)
 
 def toIndex(request):
-    context          = {}
+    context = {}
     return render(request, "index.html", context)
