@@ -44,6 +44,10 @@ test_dict = {
 }
 
 
+class QueryError(Exception):
+    def __init__(self, err='QueryError'):
+        Exception.__init__(self, err)
+
 
 class SearchHandle(object):
     def __init__(self):
@@ -60,7 +64,7 @@ class SearchHandle(object):
     def readFromMysql(self, sql):
         comment_dict = self.sqlhandle.read2dict(sql)
         self.total_comment = self.sqlhandle.read_count
-        #self.sqlhandle.close_session()
+        # self.sqlhandle.close_session()
         return comment_dict
 
     def readFromNosql(self, term):
@@ -79,11 +83,17 @@ class SearchHandle(object):
         """
         result = self.readFromNosql(term)
         if not bool(result):
-            result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[0][1])
+            try:
+                result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[0][1])
+            except IndexError:
+                raise QueryError('QueryError')
         if not bool(result):
-            result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[1][1])
+            try:
+                result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[1][1])
+            except IndexError:
+                raise QueryError('QueryError')
         if not bool(result):
-            print(" No result !!!!")
+            raise QueryError('QueryError')
 
         return pd.DataFrame.from_dict(result)
 
@@ -188,8 +198,7 @@ if __name__ == "__main__":
     get = searchservice.initTerm("get")
     pytohn = searchservice.initTerm("pytohn")
     mid3 = time.time()
-    print("time of finding data from db:", mid3-start3)
-
+    print("time of finding data from db:", mid3 - start3)
 
     start2 = time.time()
     searchresult = searchservice.getANDResult(put, get)
@@ -197,5 +206,4 @@ if __name__ == "__main__":
     print("the search time is: ", mid2 - start2)
     print(searchservice.finalize(searchresult))
 
-
-    #print(searchservice.finalize(searchresult))
+    # print(searchservice.finalize(searchresult))
