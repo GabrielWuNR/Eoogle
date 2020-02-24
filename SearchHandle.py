@@ -44,6 +44,7 @@ test_dict = {
 }
 
 
+
 class SearchHandle(object):
     def __init__(self):
         """
@@ -58,8 +59,8 @@ class SearchHandle(object):
 
     def readFromMysql(self, sql):
         comment_dict = self.sqlhandle.read2dict(sql)
-        # self.total_comment = self.sqlhandle.read_count
-        self.sqlhandle.close_session()
+        self.total_comment = self.sqlhandle.read_count
+        #self.sqlhandle.close_session()
         return comment_dict
 
     def readFromNosql(self, term):
@@ -67,7 +68,6 @@ class SearchHandle(object):
         term : 需要查的term
         result  : dict 包含該term的所有信息
         """
-        self.stemer.stem(term)
         __term = [term]
         terminfo = self.DynamoDBService.operate_table(table_name="TFIDF", terms=__term)
         return terminfo[term]
@@ -77,10 +77,14 @@ class SearchHandle(object):
         term : 在組合之前需要初始化的term
         return : term 對應的DataFrame
         """
-        try:
-            result = self.readFromNosql(term)
-        except:
-            result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[1])
+        result = self.readFromNosql(term)
+        if not bool(result):
+            result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[0][1])
+        if not bool(result):
+            result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[1][1])
+        if not bool(result):
+            print(" No result !!!!")
+
         return pd.DataFrame.from_dict(result)
 
     def getOneResult(self, term_df):
@@ -109,7 +113,7 @@ class SearchHandle(object):
     def getXORResult(self, term_df1, term_df2):
         droplist = []
         for index, row in term_df1.iteritems():
-            if index in term_df1.columns:
+            if index in term_df2.columns:
                 droplist.append(index)
 
         result = term_df1.drop(columns=droplist)
@@ -124,6 +128,7 @@ class SearchHandle(object):
         return result
 
     def getDisResult(self, term_df1, term_df2, distance):
+        distance = int(distance)
         subresult = self.getANDResult(term_df1, term_df2)
         result = pd.DataFrame().reindex_like(term_df1)
         picklist = []
@@ -163,8 +168,9 @@ class SearchHandle(object):
         """
         __result = result.sort_values(axis=1, by='score')
         deliver = []
-        for index, row in __result.iteritems():
-            commentid = index
+        for id in __result.columns:
+            commentid = id
+            print(commentid)
             sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id = '" + commentid + "'"
             deliver.append(self.readFromMysql(sql))
 
@@ -178,16 +184,17 @@ if __name__ == "__main__":
     print("the init time is :", mid1 - start)
 
     start3 = time.time()
-    put = searchservice.initTerm("get")
-    get = searchservice.initTerm("put")
+    put = searchservice.initTerm("put")
+    get = searchservice.initTerm("get")
+    pytohn = searchservice.initTerm("pytohn")
     mid3 = time.time()
     print("time of finding data from db:", mid3-start3)
 
 
     start2 = time.time()
-    searchresult = searchservice.getANDResult(put, get)
+    searchresult = searchservice.getOneResult(pytohn)
     mid2 = time.time()
     print("the search time is: ", mid2 - start2)
-    #print(searchresult)
+    print(searchresult)
 
-    print(searchservice.finalize(searchresult))
+    #print(searchservice.finalize(searchresult))
