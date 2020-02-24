@@ -54,13 +54,14 @@ body {
 }
 
 h1 {
-  color: rgba(255, 122, 122, 1);
+  color: #696969;
   transition: var(--transition-1);
 }
 
 h1 > a {
   text-decoration: none;
-  color: rgba(255, 122, 122, 1);
+  color: #696969;
+   %color: rgba(255, 122, 122, 1);
 }
 
 h1 > a::selection {
@@ -87,7 +88,7 @@ h4::selection {
 .toggele {
   display: flex;
   position: abolute;
-  border: 1px solid #ffc6c6;
+  border: 1px solid #2F4F4F;
   height: 35px;
   width: 120px;
   border-radius: 50px;
@@ -99,7 +100,7 @@ h4::selection {
 .toggeler {
   display: grid;
   cursor: pointer;
-  background-color: rgba(255, 198, 198, 1);
+  background-color: rgba(47, 79, 79, 1);
   color: #fff;
   height: 25px;
   width: 60px;
@@ -117,7 +118,7 @@ h4::selection {
 
 .toggeler:hover {
   width: 70px;
-  background-color: rgba(255, 122, 122, 0.7);
+  background-color: rgba(47, 79, 79, 0.7);
 }
 
 .toggeler::selection {
