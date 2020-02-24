@@ -8,7 +8,7 @@ from collections import defaultdict
 from decimal import Decimal
 
 from pandas import DataFrame
-import invertIndex2
+#import invertIndex2
 
 from boto3.dynamodb.conditions import Attr, Key
 class DynamoDBService:
@@ -65,7 +65,7 @@ class DynamoDBService:
 
 
 if __name__ == '__main__':
-    term=['put','got','bomb']#示例   输入的term为list
+    term=['put','got','bomb']  #示例   输入的term为list
     DynamoDBService = DynamoDBService()
     TFIDF_term = DynamoDBService.operate_table(table_name="TFIDF",terms=term)
 

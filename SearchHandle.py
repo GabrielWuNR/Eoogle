@@ -7,6 +7,8 @@ from pymongo import MongoClient
 from nltk.stem.porter import *
 import pymysql
 import os
+import readfromDynamo
+import time
 
 test_dict = {
     "term1": {
@@ -43,10 +45,12 @@ test_dict = {
 
 
 class SearchHandle(object):
-    def __init__(self, dbname, host='localhost', port='27017'):
+    def __init__(self):
         """
         需要在這裏分別接入 mysql 和 dymanoDB 的數據庫 然後再進行操作
         """
+        self.stemer = PorterStemmer()
+        self.DynamoDBService = readfromDynamo.DynamoDBService()
         self.sqlhandle = readfromDB.handlerwithsql()
         self.fuzzy = fuzzysearch.Fuzzy()
 
@@ -58,14 +62,15 @@ class SearchHandle(object):
         self.sqlhandle.close_session()
         return comment_dict
 
-    def __readFromNosql(self, term):
+    def readFromNosql(self, term):
         """
         term : 需要查的term
         result  : dict 包含該term的所有信息
         """
-        term = self.stem.stem(term)
-        result = self.collection.find_one({"term": term})
-        return result
+        self.stemer.stem(term)
+        __term = [term]
+        terminfo = self.DynamoDBService.operate_table(table_name="TFIDF", terms=__term)
+        return terminfo[term]
 
     def initTerm(self, term):
         """
@@ -73,9 +78,9 @@ class SearchHandle(object):
         return : term 對應的DataFrame
         """
         try:
-            result = self.__readFromNosql(term)
-        except :
-            result = self.__readFromNosql(self.fuzzy.bktreeSearch(term)[1])
+            result = self.readFromNosql(term)
+        except:
+            result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[1])
         return pd.DataFrame.from_dict(result)
 
     def getOneResult(self, term_df):
@@ -130,7 +135,7 @@ class SearchHandle(object):
                         )
                         ) or (
                                 (row["pos"][i + 1] in term_df1[index]["pos"]) and (
-                                 row["pos"][i] in term_df2[index]["pos"]
+                                row["pos"][i] in term_df2[index]["pos"]
                         )
                         )
                 ):
@@ -164,3 +169,25 @@ class SearchHandle(object):
             deliver.append(self.readFromMysql(sql))
 
         return deliver
+
+
+if __name__ == "__main__":
+    start = time.time()
+    searchservice = SearchHandle()
+    mid1 = time.time()
+    print("the init time is :", mid1 - start)
+
+    start3 = time.time()
+    put = searchservice.initTerm("get")
+    get = searchservice.initTerm("put")
+    mid3 = time.time()
+    print("time of finding data from db:", mid3-start3)
+
+
+    start2 = time.time()
+    searchresult = searchservice.getANDResult(put, get)
+    mid2 = time.time()
+    print("the search time is: ", mid2 - start2)
+    #print(searchresult)
+
+    print(searchservice.finalize(searchresult))
