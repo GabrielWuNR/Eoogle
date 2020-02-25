@@ -73,7 +73,7 @@ class SearchHandle(object):
         result  : dict 包含該term的所有信息
         """
         __term = [term]
-        terminfo = self.DynamoDBService.operate_table(table_name="TFIDF", terms=__term)
+        terminfo = self.DynamoDBService.operate_table(table_name="BM25", terms=__term)
         return terminfo[term]
 
     def initTerm(self, term):
