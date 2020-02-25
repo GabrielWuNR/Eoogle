@@ -271,7 +271,7 @@ def parallel(i):
     start = i
     if start > len_responses - 1:
         pass
-    end = start + 1
+    end = start + 2
     if end > len_responses:
         end = len_responses
     sub_response = responses[start:end]
@@ -284,7 +284,7 @@ def main():
     test = Handler2sql(DEVELOPER_KEY[0], SCOPES, 'Eoogle')
     response = test.pullMostPopularReponse(50)
     responses = copy.deepcopy(response['items'])
-    i = range(50)
+    i = range(0, 50, 2)
     start_time = time.time()
     with concurrent.futures.ThreadPoolExecutor() as executor:
         executor.map(parallel, i)
