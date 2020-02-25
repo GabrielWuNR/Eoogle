@@ -3,7 +3,7 @@ import readfromDB
 import fuzzysearch
 import json
 import pymongo
-from pymongo import MongoClient
+#from pymongo import MongoClient
 from nltk.stem.porter import *
 import pymysql
 import os
@@ -117,7 +117,7 @@ class SearchHandle(object):
                     if index not in picklist:
                         picklist.append(index)
             result = subresult[picklist]
-            print(droplist)
+            #print()
         return result
 
     def getXORResult(self, term_df1, term_df2):
