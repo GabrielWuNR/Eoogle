@@ -5,8 +5,7 @@ def getkeys(DEVELOPER_KEY, MAIN_KEYS):
 	for key in keys:
 		if line_number == 1:
 			DEVELOPER_KEY.append(key.strip())
-		else:
-			MAIN_KEYS.append(key.strip())
+		MAIN_KEYS.append(key.strip())
 		line_number += 1
 
 
