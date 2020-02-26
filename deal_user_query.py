@@ -3,18 +3,7 @@ import SearchHandle
 from time import time
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
-import os
 import re
-
-
-def split_df(term_df):
-    n = len(term_df.colonms)
-    if term_df.colonms >= 200:
-        return [term_df.iloc[:, :n / 5], term_df.iloc[:, n / 5:2 * n / 5], term_df.iloc[:, 2 * n / 5: 3 * n / 5],
-                term_df.iloc[:, 3 * n / 5:4 * n / 5], term_df.iloc[:, 4 * n:]]
-
-
-
 
 class parse_search():
     def __init__(self):
@@ -163,10 +152,6 @@ class parse_search():
                     pass
 
             res = self.search.initTerm(proximity_terms[0])
-            start = 0
-            # if(get_count(res)>10):
-            #     if get_count(res)
-            #         res = res[start:end]
 
             while len(proximity_terms) > 1:
                 del proximity_terms[0]
@@ -184,8 +169,6 @@ class parse_search():
         query = self.preprocess_query(query)
 
         queue = collections.deque(query)
-
-        print("开始执行，进程号为%d" % os.getpid())
 
         term = ''
         flag = 'none'
@@ -261,11 +244,9 @@ class parse_search():
                     del opt[-1]
                 pass
 
-        print(qword)
-        print(opt)
-
-        res = qword[0]
-        while len(opt) > 0:
+        if len(qword)>0:
+            res = qword[0]
+        while len(opt) > 0 and len(qword)>0:
             del qword[0]
             if opt[0] == 'AND NOT':
                 print('in and not')
@@ -283,9 +264,6 @@ class parse_search():
 
 
 if __name__ == '__main__':
-    # term_df1 = pd.DataFrame.from_dict(dict["term1"])
-    # term_df2 = pd.DataFrame.from_dict(dict["term2"])
-    # print(test.getANDNeiResult(term_df1, term_df2))
     a = parse_search()
     start = time()
     res = a.getSearch('fucking bitch')
