@@ -270,7 +270,6 @@ class parse_search():
             del opt[0]
 
         res = self.search.newFinalize(res)
-        # print(sqllist)
         return res
 
 
