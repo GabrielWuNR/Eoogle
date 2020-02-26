@@ -1,14 +1,17 @@
 # pip install pybktree
 # pip install fuzzywuzzy
 import collections
+import sys
+sys.path.append('/opt/python/current/app/Test/')
 import json
-import pybktree_mo
+from Test import pybktree_mo
 import time
+import os
 
-
+os.path.join(os.path.dirname(__file__), 'words_dictionary.json')
 class Fuzzy():
     def __init__(self):
-        with open('words_dictionary.json', 'r') as f:
+        with open(os.path.join(os.path.dirname(__file__), 'words_dictionary.json'), 'r') as f:
             self.dictionary = json.load(f).keys()
             self.tree = pybktree_mo.BKTree(pybktree_mo.hamming_distance, self.dictionary)
 

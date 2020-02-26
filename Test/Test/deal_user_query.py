@@ -1,8 +1,12 @@
 import collections
-import SearchHandle
+
+import sys
+sys.path.append('/opt/python/current/app/Test/Test/nltk/corpus')
+from Test import SearchHandle
 from time import time
 from nltk.stem import PorterStemmer
-from nltk.corpus import stopwords
+# from nltk.corpus import stopwords
+import os
 import re
 
 class parse_search():
@@ -12,19 +16,20 @@ class parse_search():
         """
         self.stemmer = PorterStemmer()
         self.search = SearchHandle.SearchHandle()
-        self.stopWordList = stopwords.words('english')
-        self.stopDic = {}
-        for word in self.stopWordList:
-            self.stopDic[word] = 1
+        # self.stopWordList = stopwords.words('english')
+        # self.stopDic = {}
+        # for word in self.stopWordList:
+        #     self.stopDic[word] = 1
         print("Initilized successfully")
 
-    def preprocess_query(self, query):
-        res = ''
-        remov_stop = [word for word in query.split() if word not in self.stopDic]
-        for word in remov_stop:
-            res+= word
-            res+= ' '
-        return res.rstrip(' ')
+
+    # def preprocess_query(self, query):
+    #     res = ''
+    #     remov_stop = [word for word in query.split() if word not in self.stopDic]
+    #     for word in remov_stop:
+    #         res+= word
+    #         res+= ' '
+    #     return res.rstrip(' ')
 
     def preprocess_word(self, term):
         term_cutpun = re.sub(r'[^\w\s]', '', term)
@@ -54,7 +59,11 @@ class parse_search():
         if(len(queue) == 0):
             print("no words need to be phased，use all OR search")
             for word in phase_terms:
-                qword.append(self.search.initTerm(self.preprocess_word(word)))
+                try:
+                    qword.append(self.search.initTerm(self.preprocess_word(word)))
+                except SearchHandle.QueryError:
+                    count_space-=1
+                    pass
             for i in range(0, count_space):
                 opt.append('OR')
 
@@ -63,12 +72,24 @@ class parse_search():
             queue.popleft()
             if(len(phase_terms) == 1):
                 print("no words need to be phased")
-                qword.append(self.search.initTerm(phase_terms[0]))
+                try:
+                    qword.append(self.search.initTerm(phase_terms[0]))
+                except SearchHandle.QueryError:
+                    pass
             else:
-                res = self.search.initTerm(phase_terms[0])
+                while len(phase_terms) > 0:
+                    try:
+                        res = self.search.initTerm(phase_terms[0])
+                        break
+                    except SearchHandle.QueryError:
+                        del phase_terms[0]
+                        pass
                 while len(phase_terms) > 1:
                     del phase_terms[0]
-                    res = self.search.getANDNeiResult(res, self.search.initTerm(phase_terms[0]))
+                    try:
+                        res = self.search.getANDNeiResult(res, self.search.initTerm(phase_terms[0]))
+                    except SearchHandle.QueryError:
+                        pass
                 qword.append(res)
 
     def deal_with_proximity(self, queue, qword, opt):
@@ -90,7 +111,12 @@ class parse_search():
 
         #如果还没找到左括号就结束了，把这个词放进搜索list,返回平常方法
         if (len(queue) == 0 or queue[0] != '('):
-            qword.append(self.search.initTerm(self.preprocess_word(distance)))
+            try:
+                qword.append(self.search.initTerm(self.preprocess_word(distance)))
+            except SearchHandle.QueryError:
+                if(len(queue) > 0 and queue[0] == '('):
+                    queue.popleft()
+                pass
             return
         else:
             #如果找到了左括号，将左括号剔除
@@ -113,15 +139,28 @@ class parse_search():
         term = ''
         if (len(queue) == 0):
             for word in proximity_terms:
-                qword.append(self.search.initTerm(word))
+                try:
+                    qword.append(self.search.initTerm(word))
+                except SearchHandle.QueryError:
+                    count_space-=1
+                    pass
             for i in range(0, count_space):
                 opt.append('OR')
         else:
             queue.popleft()
-            res = self.search.initTerm(proximity_terms[0])
+            while len(proximity_terms) > 0:
+                try:
+                    res = self.search.initTerm(proximity_terms[0])
+                    break
+                except SearchHandle.QueryError:
+                    del proximity_terms[0]
+                    pass
             while len(proximity_terms) > 1:
                 del proximity_terms[0]
-                res = self.search.getDisResult(res, self.search.initTerm(proximity_terms[0]), distance)
+                try:
+                    res = self.search.getDisResult(res, self.search.initTerm(proximity_terms[0]), distance)
+                except SearchHandle.QueryError:
+                    pass
             qword.append(res)
 
 
@@ -130,9 +169,12 @@ class parse_search():
         qword = []
         opt = []
 
-        query = self.preprocess_query(query)
+        # query = self.preprocess_query(query)
 
         queue = collections.deque(query)
+
+        print("开始执行，进程号为%d" % os.getpid())
+
         term = ''
         flag = 'none'
         while (len(queue) > 0):
@@ -171,17 +213,25 @@ class parse_search():
                             elif len(queue)>3 and (queue[0] + queue[1] + queue[2])!='AND' and (queue[0] + queue[1])!='OR':
                                 opt.append('OR')
                         if term != '':
+                            try:
+                                qword.append(self.search.initTerm(self.preprocess_word(term)))
+                            except SearchHandle.QueryError:
+                                if flag == 'none' and len(opt)>0:
+                                    del opt[-1]
+                                pass
                             flag = 'none'
-                            qword.append(self.search.initTerm(self.preprocess_word(term)))
                             term = ''
                 else:
                     if term == 'NOT' and flag == 'AND':
                         opt[-1] = 'AND NOT'
                         flag = 'NOT'
                         term = ''
-                    flag = 'none'
+
                     if term!='':
-                        qword.append(self.search.initTerm(self.preprocess_word(term)))
+                        try:
+                            qword.append(self.search.initTerm(self.preprocess_word(term)))
+                        except SearchHandle.QueryError:
+                            pass
                     term = ''
 
             #if we get a phrase search, we will store the result list in the
@@ -191,9 +241,16 @@ class parse_search():
                     term += temp
 
         if term!='':
-            qword.append(self.search.initTerm(self.preprocess_word(term)))
+            try:
+                qword.append(self.search.initTerm(self.preprocess_word(term)))
+            except SearchHandle.QueryError:
+                if len(opt)>0:
+                    del opt[-1]
+                pass
+
         print(qword)
         print(opt)
+
         res = qword[0]
         while len(opt)>0:
             del qword[0]
@@ -206,8 +263,7 @@ class parse_search():
             del opt[0]
 
         return self.search.finalize(res)
-
-
+        # return res
 
 
 
@@ -217,8 +273,8 @@ if __name__ == '__main__':
     # print(test.getANDNeiResult(term_df1, term_df2))
     a = parse_search()
     start = time()
-    res = a.getSearch('fuck AND bomb AND ruin')
+    res = a.getSearch('#20(sfsdfsdfssss, fuck)')
     stop = time()
-    print(res[0])
+    print(res)
     print(str(stop - start) + "s for search")
     # a.getSearch('  #14(term1,term2)')
