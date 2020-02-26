@@ -1,7 +1,10 @@
 import json
 import pymysql
 import os
+import ast
 import time
+
+
 class readfromMysqlBM25(object):
 
     def __init__(self):
@@ -22,22 +25,21 @@ class readfromMysqlBM25(object):
             print("Read error\n")
             self.connect.rollback()
 
-def readTerm25(terms):
-        BM25 = {}
-        for term in terms:
-            BM25[term] = {}
-            sql = "select * from eoogle.BM25 BM25 where Term ='" + term + "'"
-            test = handlerwithsql()
-            BM25_dict = test.read2dict(sql)
+    def readTerm25(self, terms):
+            BM25 = {}
+            for term in terms:
+                BM25[term] = {}
+                sql = "select * from eoogle.BM25 BM25 where Term ='" + term + "'"
+                BM25_dict = self.read2dict(sql)
 
-            for item in BM25_dict:
-                commentID = item['commentID']
+                for item in BM25_dict:
+                    commentID = item['commentID']
 
-                BM25[term][commentID] = {}
-                BM25[term][commentID]['pos'] = item['posID']
-                BM25[term][commentID]['score'] =  float(item['score'])
-        print(BM25)
-        return BM25
+                    BM25[term][commentID] = {}
+                    BM25[term][commentID]['pos'] = ast.literal_eval(item['posID'])
+                    BM25[term][commentID]['score'] =  float(item['score'])
+            print(BM25)
+            return BM25
 if __name__ == '__main__':
     #SQL1='SELECT id, comment_text FROM comment'
     '''

@@ -56,9 +56,9 @@ class SearchHandle(object):
         """
         需要在這裏分別接入 mysql 和 dymanoDB 的數據庫 然後再進行操作
         """
-        self.total_comment = self.sqlhandle.read_count
+        # self.total_comment = self.sqlhandle.read_count
         self.stemer = PorterStemmer()
-        self.readBM25 = readBM25.readfromMysqlBM25()
+        self.readBM25Handle = readBM25.readfromMysqlBM25()
         self.sqlhandle = readfromDB.handlerwithsql()
         self.fuzzy = fuzzysearch.Fuzzy()
 
@@ -75,7 +75,7 @@ class SearchHandle(object):
         result  : dict 包含該term的所有信息
         """
         __term = [term]
-        terminfo =  readBM25.readTerm25(__term)
+        terminfo = self.readBM25Handle.readTerm25(__term)
         return terminfo[term]
 
     def initTerm(self, term):
@@ -207,6 +207,7 @@ class SearchHandle(object):
             for inx in term1.keys():
                 if inx in term2:
                     for pos in term2[inx]['pos']:
+                        pos = pos
                         dis = 0 if pos - distance < 0 else pos - distance
                         for i in range(dis, pos + distance + 1):
                             if i in term1[inx]['pos']:
@@ -318,8 +319,8 @@ if __name__ == "__main__":
     print("the init time is :", mid1 - start)
 
     start2 = time.time()
-    put = searchservice.initTerm("put")
-    get = searchservice.initTerm("get")
+    put = searchservice.initTerm("wait")
+    get = searchservice.initTerm("jame")
     mid2 = time.time()
     print("time of finding data from db:", mid2 - start2)
     # distance search
@@ -350,8 +351,8 @@ if __name__ == "__main__":
 
     # full exmaple:
     start8 = time.time()
-    put = searchservice.initTerm("put")
-    get = searchservice.initTerm("get")
+    put = searchservice.initTerm("wait")
+    get = searchservice.initTerm("jame")
     example_or_search = searchservice.getNewOrResult(put, get)
     example_searchresult = searchservice.newFinalize(example_or_search)
     print("the example search time is ", time.time() - start8)
