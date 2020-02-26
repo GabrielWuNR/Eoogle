@@ -1,13 +1,16 @@
 import pandas as pd
-import readfromDB
-import fuzzysearch
+from Test import readfromDB
+from Test import fuzzysearch
+import sys
+sys.path.append('/opt/python/current/app/Test/')
 import json
-import pymongo
-from pymongo import MongoClient
+#import pymongo
+#from pymongo import MongoClient
+import nltk
 from nltk.stem.porter import *
 import pymysql
 import os
-import readfromDynamo
+from Test import readfromDynamo
 import time
 
 test_dict = {
@@ -117,7 +120,6 @@ class SearchHandle(object):
                     if index not in picklist:
                         picklist.append(index)
             result = subresult[picklist]
-            print(droplist)
         return result
 
     def getXORResult(self, term_df1, term_df2):
@@ -180,9 +182,11 @@ class SearchHandle(object):
         deliver = []
         for id in __result.columns:
             commentid = id
-            print(commentid)
             sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id = '" + commentid + "'"
-            deliver.append(self.readFromMysql(sql))
+            if not deliver:
+                deliver = self.readFromMysql(sql)
+            else:
+                deliver.append(self.readFromMysql(sql)[0])
 
         return deliver
 

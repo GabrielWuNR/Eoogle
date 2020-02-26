@@ -10,7 +10,6 @@ https://github.com/Jetsetter/pybktree
 
 from collections import deque
 from operator import itemgetter
-import distance
 import textdistance
 
 __all__ = ['hamming_distance', 'BKTree']

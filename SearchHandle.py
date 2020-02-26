@@ -3,7 +3,7 @@ import readfromDB
 import fuzzysearch
 import json
 import pymongo
-# from pymongo import MongoClient
+
 from nltk.stem.porter import *
 import pymysql
 import os
@@ -89,6 +89,7 @@ class SearchHandle(object):
                 result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[0][1])
             except IndexError:
                 raise QueryError('QueryError')
+
         return result
 
     def getOneResult(self, term_df):
@@ -126,7 +127,7 @@ class SearchHandle(object):
                     if index not in picklist:
                         picklist.append(index)
             result = subresult[picklist]
-            # print()
+
         return result
 
     def getNewNeiResult(self, term1, term2):
