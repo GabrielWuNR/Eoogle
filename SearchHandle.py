@@ -7,9 +7,10 @@ import pymongo
 from nltk.stem.porter import *
 import pymysql
 import os
-import readfromDynamo
+
 import time
 from collections import defaultdict
+import readBM25
 
 test_dict = {
     "term1": {
@@ -57,7 +58,7 @@ class SearchHandle(object):
         """
         self.total_comment = self.sqlhandle.read_count
         self.stemer = PorterStemmer()
-        self.DynamoDBService = readfromDynamo.DynamoDBService()
+        self.readBM25 = readBM25.readfromMysqlBM25()
         self.sqlhandle = readfromDB.handlerwithsql()
         self.fuzzy = fuzzysearch.Fuzzy()
 
@@ -68,13 +69,13 @@ class SearchHandle(object):
         # self.sqlhandle.close_session()
         return comment_dict
 
-    def readFromNosql(self, term):
+    def readBM25(self, term):
         """
         term : 需要查的term
         result  : dict 包含該term的所有信息
         """
         __term = [term]
-        terminfo = self.DynamoDBService.operate_table(table_name="TFIDF", terms=__term)
+        terminfo =  readTerm25(__term)
         return terminfo[term]
 
     def initTerm(self, term):
