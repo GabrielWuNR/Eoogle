@@ -11,7 +11,6 @@ import readfromDynamo
 import time
 from collections import defaultdict
 
-
 test_dict = {
     "term1": {
         "docid1": {
@@ -56,6 +55,7 @@ class SearchHandle(object):
         """
         需要在這裏分別接入 mysql 和 dymanoDB 的數據庫 然後再進行操作
         """
+        self.total_comment = self.sqlhandle.read_count
         self.stemer = PorterStemmer()
         self.DynamoDBService = readfromDynamo.DynamoDBService()
         self.sqlhandle = readfromDB.handlerwithsql()
@@ -65,7 +65,6 @@ class SearchHandle(object):
 
     def readFromMysql(self, sql):
         comment_dict = self.sqlhandle.read2dict(sql)
-        self.total_comment = self.sqlhandle.read_count
         # self.sqlhandle.close_session()
         return comment_dict
 
@@ -275,7 +274,6 @@ class SearchHandle(object):
 
         return deliver, sqllist
 
-
     def newFinalize(self, result, mode='score'):
         """
         result : type dataframe 格式爲：
@@ -293,7 +291,7 @@ class SearchHandle(object):
                 score: "",
              }
         """
-        __result = sorted(result.items(), key= lambda item:item[1]['score'], reverse=True)
+        __result = sorted(result.items(), key=lambda item: item[1]['score'], reverse=True)
         deliver = []
         sql_comment_id = ''
 
@@ -306,7 +304,10 @@ class SearchHandle(object):
             sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id IN( " + sql_comment_id + ")"
             deliver.append(self.readFromMysql(sql))
         # print(sql)
-        return deliver
+        return deliver[0]
+
+    def sortByLikeCount(self, deliver):
+        return deliver.sort(reverse=True, key=lambda k: (k.get('likecount', 0)))
 
 
 if __name__ == "__main__":
@@ -353,4 +354,4 @@ if __name__ == "__main__":
     example_or_search = searchservice.getNewOrResult(put, get)
     example_searchresult = searchservice.newFinalize(example_or_search)
     print("the example search time is ", time.time() - start8)
-    #print(example_searchresult)
+    # print(example_searchresult)

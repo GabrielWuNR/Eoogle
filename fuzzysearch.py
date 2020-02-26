@@ -50,7 +50,7 @@ if __name__ == "__main__":
     k.bktreeSearch('motherfucker')
     time_3 = time.time()
     print("Searching time:", time_3 - time_2)
-     start = time()
+    start = time()
     readterm=readterm()
     readterm.read_from_DB()
     stop = time()
