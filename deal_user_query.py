@@ -84,7 +84,7 @@ class parse_search():
                 while len(phase_terms) > 1:
                     del phase_terms[0]
                     try:
-                        res = self.search.getANDNeiResult(res, self.search.initTerm(phase_terms[0]))
+                        res = self.search.getNewNeiResult(res, self.search.initTerm(phase_terms[0]))
                     except SearchHandle.QueryError:
                         pass
                 qword.append(res)
@@ -147,15 +147,22 @@ class parse_search():
             queue.popleft()
             while len(proximity_terms) > 0:
                 try:
-                    res = self.search.initTerm(proximity_terms[0])
+                    self.search.initTerm(proximity_terms[0])
                     break
                 except SearchHandle.QueryError:
                     del proximity_terms[0]
                     pass
+
+            res = self.search.initTerm(proximity_terms[0])
+            start = 0
+            # if(get_count(res)>10):
+            #     if get_count(res)
+            #         res = res[start:end]
+
             while len(proximity_terms) > 1:
                 del proximity_terms[0]
                 try:
-                    res = self.search.getDisResult(res, self.search.initTerm(proximity_terms[0]), distance)
+                    res = self.search.getNewDisResult(res, self.search.initTerm(proximity_terms[0]), distance)
                 except SearchHandle.QueryError:
                     pass
             qword.append(res)
@@ -252,15 +259,19 @@ class parse_search():
         while len(opt)>0:
             del qword[0]
             if opt[0] == 'AND NOT':
-                res = self.search.getXORResult(res, qword[0])
+                print('in and not')
+                res = self.search.getNewXorResult(res, qword[0])
             if opt[0] == 'AND':
-                res = self.search.getANDResult(res, qword[0])
+                print('in and')
+                res = self.search.getNewAndResult(res, qword[0])
             if opt[0] == 'OR':
-                res = self.search.getORResult(res, qword[0])
+                print('in or')
+                res = self.search.getNewOrResult(res, qword[0])
             del opt[0]
 
-        return self.search.finalize(res)
-        # return res
+        res = self.search.newFinalize(res)
+        # print(sqllist)
+        return res
 
 
 
@@ -272,8 +283,9 @@ if __name__ == '__main__':
     # print(test.getANDNeiResult(term_df1, term_df2))
     a = parse_search()
     start = time()
-    res = a.getSearch('#20(sfsdfsdfssss, fuck)')
-    stop = time()
+    res = a.getSearch('fucking bitch')
+    end = time()
     print(res)
-    print(str(stop - start) + "s for search")
+    print("time of search:", start - end)
+
     # a.getSearch('  #14(term1,term2)')
