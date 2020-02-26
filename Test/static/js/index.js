@@ -121,7 +121,7 @@ const action = function (action) {
 ["focus", "blur"].forEach(function (eventType) {
   const resultsList = document.querySelector("#autoComplete_list");
 
-  document.querySelector("#autoComplete").addEventListener(eventType, function () {
+  document.querySelector(form.autoComplete).addEventListener(eventType, function () {
     // Hide results list & show other elemennts
     if (eventType === "blur") {
       action("dim");
