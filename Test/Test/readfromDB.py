@@ -1,7 +1,6 @@
 import json
-
-import pymysql
 import os
+import pymysql
 
 class handlerwithsql(object):
 
