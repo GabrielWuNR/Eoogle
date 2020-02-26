@@ -75,7 +75,7 @@ class SearchHandle(object):
         result  : dict 包含該term的所有信息
         """
         __term = [term]
-        terminfo =  readTerm25(__term)
+        terminfo =  readBM25.readTerm25(__term)
         return terminfo[term]
 
     def initTerm(self, term):
@@ -83,10 +83,10 @@ class SearchHandle(object):
         term : 在組合之前需要初始化的term
         return : term 對應的DataFrame
         """
-        result = self.readFromNosql(term)
+        result = self.readBM25(term)
         if not bool(result):
             try:
-                result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[0][1])
+                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1])
             except IndexError:
                 raise QueryError('QueryError')
 
