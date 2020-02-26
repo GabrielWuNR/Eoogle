@@ -246,6 +246,8 @@ class parse_search():
 
         if len(qword)>0:
             res = qword[0]
+        else:
+            return []
         while len(opt) > 0 and len(qword)>0:
             del qword[0]
             if opt[0] == 'AND NOT':
