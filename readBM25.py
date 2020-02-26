@@ -2,7 +2,7 @@ import json
 import pymysql
 import os
 import time
-class handlerwithsql(object):
+class readfromMysqlBM25(object):
 
     def __init__(self):
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
