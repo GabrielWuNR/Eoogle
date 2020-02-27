@@ -103,7 +103,7 @@ class SearchHandle(object):
         result = self.readBM25(term, connector)
         if not bool(result):
             try:
-                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1])
+                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1], connector)
             except IndexError:
                 raise QueryError('QueryError')
         # self.closeConnected()
