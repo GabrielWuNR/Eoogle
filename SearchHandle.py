@@ -153,16 +153,16 @@ class SearchHandle(object):
         if len(term1) < len(term2):
             for inx in term1.keys():
                 if inx in term2:
-                    for pos in term2[inx]['pos']:
-                        if (pos + 1) in term1[inx]['pos']:
+                    for pos in term1[inx]['pos']:
+                        if (pos + 1) in term2[inx]['pos']:
                             picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
                             picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
             return picklist
         else:
             for inx in term2.keys():
                 if inx in term1:
-                    for pos in term1[inx]['pos']:
-                        if (pos + 1) in term2[inx]['pos']:
+                    for pos in term2[inx]['pos']:
+                        if (pos - 1) in term1[inx]['pos']:
                             picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
                             picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
             return picklist
@@ -225,7 +225,6 @@ class SearchHandle(object):
             for inx in term1.keys():
                 if inx in term2:
                     for pos in term2[inx]['pos']:
-                        pos = pos
                         dis = 0 if pos - distance < 0 else pos - distance
                         for i in range(dis, pos + distance + 1):
                             if i in term1[inx]['pos']:
