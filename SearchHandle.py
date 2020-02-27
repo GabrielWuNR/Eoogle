@@ -126,7 +126,7 @@ class SearchHandle(object):
                 if inx in term2:
                     picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
                     picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-            return pd.DataFrame.from_dict(picklist)
+            return picklist
         else:
             for inx in term2.keys():
                 if inx in term1:
@@ -164,7 +164,7 @@ class SearchHandle(object):
                     for pos in term1[inx]['pos']:
                         if (pos + 1) in term2[inx]['pos']:
                             picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-                            picklist[inx]['score'] = temr1[inx]['score'] + term2[inx]['score']
+                            picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
             return picklist
 
     def getXORResult(self, term_df1, term_df2):
@@ -182,7 +182,7 @@ class SearchHandle(object):
             for inx in term1.keys():
                 if inx not in term2:
                     picklist[inx] = term1[inx]
-            return pd.DataFrame.from_dict(picklist)
+            return picklist
         else:
             for inx in term2.keys():
                 if inx not in term1:
@@ -240,7 +240,7 @@ class SearchHandle(object):
                         for i in range(dis, pos + distance + 1):
                             if i in term2[inx]['pos']:
                                 picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-                                picklist[inx]['score'] = temr1[inx]['score'] + term2[inx]['score']
+                                picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
             return picklist
 
     def getDisResult(self, term_df1, term_df2, distance):
@@ -294,7 +294,7 @@ class SearchHandle(object):
 
         return deliver, sqllist
 
-    def newFinalize(self, result,connector, mode='score'):
+    def newFinalize(self, result, connector, mode='score'):
         """
         result : type dataframe 格式爲：
                             docid1     docid2     docid100
@@ -323,7 +323,7 @@ class SearchHandle(object):
             sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id IN( " + sql_comment_id + ")"
             deliver.append(self.readFromMysql(sql, connector))
         # print(sql)
-        # self.closeConnected()
+        #self.closeConnected()
         return deliver[0]
 
     def sortByLikeCount(self, deliver):
@@ -337,11 +337,11 @@ if __name__ == "__main__":
     print("the init time is :", mid1 - start)
 
     connector1 = SqlCreator()
-    connector2 = SqlCreator()
+    #connector2 = SqlCreator()
 
     start2 = time.time()
     put = searchservice.initTerm("wait", connector1.getConn())
-    get = searchservice.initTerm("jame", connector2.getConn())
+    get = searchservice.initTerm("jame", connector1.getConn())
     mid2 = time.time()
     print("time of finding data from db:", mid2 - start2)
     # distance search
@@ -372,8 +372,10 @@ if __name__ == "__main__":
 
     # full exmaple:
     start8 = time.time()
+    connector1 = SqlCreator()
+    searchservice = SearchHandle()
     put = searchservice.initTerm("wait", connector1.getConn())
-    get = searchservice.initTerm("jame", connector2.getConn())
+    get = searchservice.initTerm("jame", connector1.getConn())
     example_or_search = searchservice.getNewOrResult(put, get)
     example_searchresult = searchservice.newFinalize(example_or_search, connector1.getConn())
     print("the example search time is ", time.time() - start8)
