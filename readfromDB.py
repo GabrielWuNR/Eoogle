@@ -3,6 +3,8 @@ import json
 import pymysql
 import os
 import ast
+
+
 class handlerwithsql(object):
 
     def __init__(self):
@@ -14,9 +16,9 @@ class handlerwithsql(object):
                                        cursorclass=pymysql.cursors.DictCursor)
         print("Initilized successfully")
 
-    def read2dict(self,sql):
+    def read2dict(self, sql):
         cur = self.connect.cursor()
-        #sql = 'SELECT id, comment_text FROM comment'
+        # sql = 'SELECT id, comment_text FROM comment'
         try:
             # Execute the SQL command
             self.read_count = cur.execute(sql)
@@ -24,7 +26,7 @@ class handlerwithsql(object):
 
             read_result = cur.fetchall()
             cur.close()
-           # print(read_result)
+            # print(read_result)
             return read_result
 
         except:
@@ -32,15 +34,13 @@ class handlerwithsql(object):
             # print("Read error\n"+ cur.Error)
             self.connect.rollback()
 
-
-
     def search4video(self):
         video_id = []
         cur = self.connect.cursor()
 
-        #Search content can be gained from keyboard or a whole list
-        #search_content = input('输入需要搜索的comment_Id：')
-        #Transform the input list into a tuple string then batch search
+        # Search content can be gained from keyboard or a whole list
+        # search_content = input('输入需要搜索的comment_Id：')
+        # Transform the input list into a tuple string then batch search
 
         sql = 'SELECT videoid FROM video '
         try:
@@ -58,36 +58,42 @@ class handlerwithsql(object):
             self.connect.rollback()
 
         return video_id
+
     def close_session(self):
         self.connect.close()
 
-
     def readTerm25(self, terms):
-            BM25 = {}
-            for term in terms:
-                BM25[term] = {}
-                sql = "select * from eoogle.BM25 BM25 where Term ='" + term + "'"
-                BM25_dict = self.read2dict(sql)
+        BM25 = {}
+        for term in terms:
+            BM25[term] = {}
+            sql = "select * from eoogle.BM25 BM25 where Term ='" + term + "'"
+            BM25_dict = self.read2dict(sql)
+            print(BM25_dict)
 
-                for item in BM25_dict:
-                    commentID = item['commentID']
+            for item in BM25_dict:
+                commentID = item['commentID']
+                BM25[term][commentID] = {}
 
-                    BM25[term][commentID] = {}
+                if item['posID'][-1] != ']':
+                    BM25[term][commentID]['pos'] = ast.literal_eval(item['posID'][:item['posID'].rfind(',')] + ']')
+                    print()
+                else:
                     BM25[term][commentID]['pos'] = ast.literal_eval(item['posID'])
-                    BM25[term][commentID]['score'] =  float(item['score'])
-            print(BM25)
-            return BM25
+                BM25[term][commentID]['score'] = float(item['score'])
+        print(BM25)
+        return BM25
+
 
 if __name__ == '__main__':
-    #SQL1='SELECT id, comment_text FROM comment'
+    # SQL1='SELECT id, comment_text FROM comment'
     SQL1 = 'SELECT  videotitle FROM eoogle.video V;'
     test = handlerwithsql()
-    readdict=test.read2dict(SQL1)
-    print(readdict)
-    readjson = json.dumps(readdict, indent=1)
-    #print(readjson)
-    videoid = test.search4video()
-    with open("likecountorder.json", 'w') as f:
-        f.write(readjson)
-        # ignore it  just use readdict
-
+    # readdict=test.read2dict(SQL1)
+    # print(readdict)
+    # readjson = json.dumps(readdict, indent=1)
+    # #print(readjson)
+    # videoid = test.search4video()
+    # with open("likecountorder.json", 'w') as f:
+    #     f.write(readjson)
+    #     # ignore it  just use readdict
+    test.readTerm25(['2020'])
