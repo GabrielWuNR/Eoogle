@@ -200,15 +200,6 @@ class SearchHandle(object):
     def getNewOrResult(self, term1, term2):
         term3 = defaultdict(dict)
         if len(term1) < len(term2):
-            for inx in term1.keys():
-                if inx in term2:
-                    term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-                    term3[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
-                else:
-                    term3[inx]['pos'] = term1[inx]['pos']
-                    term3[inx]['score'] = term1[inx]['score']
-            return term3
-        else:
             for inx in term2.keys():
                 if inx in term1:
                     term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
@@ -216,6 +207,15 @@ class SearchHandle(object):
                 else:
                     term3[inx]['pos'] = term2[inx]['pos']
                     term3[inx]['score'] = term2[inx]['score']
+            return term3
+        else:
+            for inx in term1.keys():
+                if inx in term2:
+                    term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                    term3[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+                else:
+                    term3[inx]['pos'] = term1[inx]['pos']
+                    term3[inx]['score'] = term1[inx]['score']
             return term3
 
     def getNewDisResult(self, term1, term2, distance):
@@ -315,6 +315,9 @@ class SearchHandle(object):
         deliver = []
         sql_comment_id = ''
 
+        if not result:
+            return []
+
         for id in __result:
             sql_comment_id += "'" + str(id[0]) + "'"
             sql_comment_id += ', '
@@ -371,12 +374,12 @@ if __name__ == "__main__":
     print("the nei search time is: ", mid7 - start7)
 
     # full exmaple:
+    searchservice = SearchHandle()
     start8 = time.time()
     connector1 = SqlCreator()
-    searchservice = SearchHandle()
     put = searchservice.initTerm("wait", connector1.getConn())
-    get = searchservice.initTerm("jame", connector1.getConn())
+    get = searchservice.initTerm("and", connector1.getConn())
     example_or_search = searchservice.getNewOrResult(put, get)
     example_searchresult = searchservice.newFinalize(example_or_search, connector1.getConn())
     print("the example search time is ", time.time() - start8)
-    # print(example_searchresult)
+    print(example_searchresult)
