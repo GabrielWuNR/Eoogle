@@ -3,15 +3,11 @@ from Test import readfromDB
 from Test import fuzzysearch
 import sys
 sys.path.append('/opt/python/current/app/Test/')
-import json
-#import pymongo
-#from pymongo import MongoClient
-import nltk
 from nltk.stem.porter import *
-import pymysql
-import os
 from Test import readfromDynamo
 import time
+from collections import defaultdict
+from Test import readBM25
 
 test_dict = {
     "term1": {
@@ -57,8 +53,9 @@ class SearchHandle(object):
         """
         需要在這裏分別接入 mysql 和 dymanoDB 的數據庫 然後再進行操作
         """
+        # self.total_comment = self.sqlhandle.read_count
         self.stemer = PorterStemmer()
-        self.DynamoDBService = readfromDynamo.DynamoDBService()
+        self.readBM25Handle = readBM25.readfromMysqlBM25()
         self.sqlhandle = readfromDB.handlerwithsql()
         self.fuzzy = fuzzysearch.Fuzzy()
 
@@ -66,17 +63,16 @@ class SearchHandle(object):
 
     def readFromMysql(self, sql):
         comment_dict = self.sqlhandle.read2dict(sql)
-        self.total_comment = self.sqlhandle.read_count
         # self.sqlhandle.close_session()
         return comment_dict
 
-    def readFromNosql(self, term):
+    def readBM25(self, term):
         """
         term : 需要查的term
         result  : dict 包含該term的所有信息
         """
         __term = [term]
-        terminfo = self.DynamoDBService.operate_table(table_name="TFIDF", terms=__term)
+        terminfo = self.readBM25Handle.readTerm25(__term)
         return terminfo[term]
 
     def initTerm(self, term):
@@ -84,21 +80,14 @@ class SearchHandle(object):
         term : 在組合之前需要初始化的term
         return : term 對應的DataFrame
         """
-        result = self.readFromNosql(term)
+        result = self.readBM25(term)
         if not bool(result):
             try:
-                result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[0][1])
+                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1])
             except IndexError:
                 raise QueryError('QueryError')
-        if not bool(result):
-            try:
-                result = self.readFromNosql(self.fuzzy.bktreeSearch(term)[1][1])
-            except IndexError:
-                raise QueryError('QueryError')
-        if not bool(result):
-            raise QueryError('QueryError')
 
-        return pd.DataFrame.from_dict(result)
+        return result
 
     def getOneResult(self, term_df):
         return term_df
@@ -108,6 +97,21 @@ class SearchHandle(object):
         for index, row in result.iteritems():
             row['pos'].sort()
         return result
+
+    def getNewAndResult(self, term1, term2):
+        picklist = defaultdict(dict)
+        if len(term1) < len(term2):
+            for inx in term1.keys():
+                if inx in term2:
+                    picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+                    picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+            return pd.DataFrame.from_dict(picklist)
+        else:
+            for inx in term2.keys():
+                if inx in term1:
+                    picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+                    picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+            return picklist
 
     def getANDNeiResult(self, term_df1, term_df2):
         subresult = self.getANDResult(term_df1, term_df2)
@@ -120,7 +124,27 @@ class SearchHandle(object):
                     if index not in picklist:
                         picklist.append(index)
             result = subresult[picklist]
+
         return result
+
+    def getNewNeiResult(self, term1, term2):
+        picklist = defaultdict(dict)
+        if len(term1) < len(term2):
+            for inx in term1.keys():
+                if inx in term2:
+                    for pos in term2[inx]['pos']:
+                        if (pos + 1) in term1[inx]['pos']:
+                            picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                            picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+            return picklist
+        else:
+            for inx in term2.keys():
+                if inx in term1:
+                    for pos in term1[inx]['pos']:
+                        if (pos + 1) in term2[inx]['pos']:
+                            picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                            picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+            return picklist
 
     def getXORResult(self, term_df1, term_df2):
         droplist = []
@@ -131,6 +155,19 @@ class SearchHandle(object):
         result = term_df1.drop(columns=droplist)
         return result
 
+    def getNewXorResult(self, term1, term2):
+        picklist = defaultdict(dict)
+        if len(term1) < len(term2):
+            for inx in term1.keys():
+                if inx not in term2:
+                    picklist[inx] = term1[inx]
+            return pd.DataFrame.from_dict(picklist)
+        else:
+            for inx in term2.keys():
+                if inx not in term1:
+                    picklist[inx] = term2[inx]
+            return picklist
+
     def getORResult(self, term_df1, term_df2):
         _left_ = self.getXORResult(term_df1, term_df2)
         _right_ = self.getXORResult(term_df2, term_df1)
@@ -138,6 +175,52 @@ class SearchHandle(object):
         subresult = pd.merge(_left_, _middle_, left_index=True, right_index=True)
         result = pd.merge(subresult, _right_, left_index=True, right_index=True)
         return result
+
+    def getNewOrResult(self, term1, term2):
+        term3 = defaultdict(dict)
+        if len(term1) < len(term2):
+            for inx in term1.keys():
+                if inx in term2:
+                    term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                    term3[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+                else:
+                    term3[inx]['pos'] = term1[inx]['pos']
+                    term3[inx]['score'] = term1[inx]['score']
+            return term3
+        else:
+            for inx in term2.keys():
+                if inx in term1:
+                    term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                    term3[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+                else:
+                    term3[inx]['pos'] = term2[inx]['pos']
+                    term3[inx]['score'] = term2[inx]['score']
+            return term3
+
+    def getNewDisResult(self, term1, term2, distance):
+        distance = int(distance)
+        picklist = defaultdict(dict)
+        if len(term1) < len(term2):
+            for inx in term1.keys():
+                if inx in term2:
+                    for pos in term2[inx]['pos']:
+                        pos = pos
+                        dis = 0 if pos - distance < 0 else pos - distance
+                        for i in range(dis, pos + distance + 1):
+                            if i in term1[inx]['pos']:
+                                picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                                picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+            return picklist
+        else:
+            for inx in term2.keys():
+                if inx in term1:
+                    for pos in term1[inx]['pos']:
+                        dis = 0 if pos - distance < 0 else pos - distance
+                        for i in range(dis, pos + distance + 1):
+                            if i in term2[inx]['pos']:
+                                picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                                picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+            return picklist
 
     def getDisResult(self, term_df1, term_df2, distance):
         distance = int(distance)
@@ -180,15 +263,53 @@ class SearchHandle(object):
         """
         __result = result.sort_values(axis=1, by='score')
         deliver = []
+        sqllist = []
         for id in __result.columns:
             commentid = id
+            print(commentid)
             sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id = '" + commentid + "'"
-            if not deliver:
-                deliver = self.readFromMysql(sql)
-            else:
-                deliver.append(self.readFromMysql(sql)[0])
+            sqllist.append(sql)
+            deliver.append(self.readFromMysql(sql))
 
-        return deliver
+        return deliver, sqllist
+
+    def newFinalize(self, result, mode='score'):
+        """
+        result : type dataframe 格式爲：
+                            docid1     docid2     docid100
+                    pos         []     []           []
+                    score     Double   Double      Double
+
+        return : 返回格式爲 list [ , , , , , ] 是排好順序的dict, 每個dict 的內容爲：
+             {
+                videoid: "",
+                commentid: "",
+                commentConetent : "",
+                videoTitle: "",
+                like: "",
+                score: "",
+             }
+        """
+        __result = sorted(result.items(), key=lambda item: item[1]['score'], reverse=True)
+        deliver = []
+        sql_comment_id = ''
+
+        for id in __result:
+            sql_comment_id += "'" + str(id[0]) + "'"
+            sql_comment_id += ', '
+        if len(sql_comment_id) > 0:
+            sql_comment_id = sql_comment_id[:-2]
+
+            sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id IN( " + sql_comment_id + ")"
+            deliver.append(self.readFromMysql(sql))
+        # print(sql)
+        if not deliver:
+            raise QueryError
+        else:
+            return deliver[0]
+
+    def sortByLikeCount(self, deliver):
+        return deliver.sort(reverse=True, key=lambda k: (k.get('likecount', 0)))
 
 
 if __name__ == "__main__":
@@ -197,17 +318,42 @@ if __name__ == "__main__":
     mid1 = time.time()
     print("the init time is :", mid1 - start)
 
-    start3 = time.time()
-    put = searchservice.initTerm("put")
-    get = searchservice.initTerm("get")
-    pytohn = searchservice.initTerm("pytohn")
-    mid3 = time.time()
-    print("time of finding data from db:", mid3 - start3)
-
     start2 = time.time()
-    searchresult = searchservice.getANDResult(put, get)
+    put = searchservice.initTerm("wait")
+    get = searchservice.initTerm("jame")
     mid2 = time.time()
-    print("the search time is: ", mid2 - start2)
-    print(searchservice.finalize(searchresult))
+    print("time of finding data from db:", mid2 - start2)
+    # distance search
+    start3 = time.time()
+    Dis_searchresult = searchservice.getNewDisResult(put, get, 100)
+    mid3 = time.time()
+    print("the dis search time is: ", mid3 - start3)
+    # And search()
+    start4 = time.time()
+    and_searchresult = searchservice.getNewAndResult(put, get)
+    mid4 = time.time()
+    print("the AND search time is: ", mid4 - start4)
+    # Or search()
+    start5 = time.time()
+    or_searchresult = searchservice.getNewOrResult(put, get)
+    mid5 = time.time()
+    print("the or search time is: ", mid5 - start5)
+    # Xor search()
+    start6 = time.time()
+    xor_searchresult = searchservice.getNewXorResult(put, get)
+    mid6 = time.time()
+    print("the xor search time is: ", mid6 - start6)
+    # Nei search()
+    start7 = time.time()
+    nei_searchresult = searchservice.getNewNeiResult(put, get)
+    mid7 = time.time()
+    print("the nei search time is: ", mid7 - start7)
 
-    # print(searchservice.finalize(searchresult))
+    # full exmaple:
+    start8 = time.time()
+    put = searchservice.initTerm("wait")
+    get = searchservice.initTerm("jame")
+    example_or_search = searchservice.getNewOrResult(put, get)
+    example_searchresult = searchservice.newFinalize(example_or_search)
+    print("the example search time is ", time.time() - start8)
+    # print(example_searchresult)

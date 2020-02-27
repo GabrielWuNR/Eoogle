@@ -260,8 +260,12 @@ class parse_search():
                 print('in or')
                 res = self.search.getNewOrResult(res, qword[0])
             del opt[0]
+            
+        try:
+            res = self.search.newFinalize(res)
+        except SearchHandle.QueryError:
+            return []
 
-        res = self.search.newFinalize(res)
         return res
 
 

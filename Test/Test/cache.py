@@ -9,3 +9,6 @@ class cache_all_search():
 
     def set_cache(self, new_cache_list):
         self.cache_list = new_cache_list
+
+    def getLength(self):
+        return len()
