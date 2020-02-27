@@ -103,7 +103,7 @@ class SearchHandle(object):
         result = self.readBM25(term, connector)
         if not bool(result):
             try:
-                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1])
+                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1], connector)
             except IndexError:
                 raise QueryError('QueryError')
         # self.closeConnected()
@@ -164,7 +164,7 @@ class SearchHandle(object):
                     for pos in term1[inx]['pos']:
                         if (pos + 1) in term2[inx]['pos']:
                             picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-                            picklist[inx]['score'] = temr1[inx]['score'] + term2[inx]['score']
+                            picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
             return picklist
 
     def getXORResult(self, term_df1, term_df2):
@@ -240,7 +240,7 @@ class SearchHandle(object):
                         for i in range(dis, pos + distance + 1):
                             if i in term2[inx]['pos']:
                                 picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-                                picklist[inx]['score'] = temr1[inx]['score'] + term2[inx]['score']
+                                picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
             return picklist
 
     def getDisResult(self, term_df1, term_df2, distance):

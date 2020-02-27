@@ -30,7 +30,7 @@ class parse_search():
         term_cutpun = re.sub(r'[^\w\s]', '', term)
         return self.stemmer.stem(term_cutpun.lower())
 
-    def deal_with_phase(self, queue, qword, opt):
+    def deal_with_phase(self, queue, qword, opt, sql_connector):
         term = ''
         phase_terms = []
         count_space = 0
@@ -55,7 +55,7 @@ class parse_search():
             print("no words need to be phased，use all OR search")
             for word in phase_terms:
                 try:
-                    qword.append(self.search.initTerm(self.preprocess_word(word)))
+                    qword.append(self.search.initTerm(self.preprocess_word(word), sql_connector.getConn()))
                 except SearchHandle.QueryError:
                     count_space -= 1
                     pass
@@ -68,13 +68,13 @@ class parse_search():
             if (len(phase_terms) == 1):
                 print("no words need to be phased")
                 try:
-                    qword.append(self.search.initTerm(phase_terms[0]))
+                    qword.append(self.search.initTerm(phase_terms[0], sql_connector.getConn()))
                 except SearchHandle.QueryError:
                     pass
             else:
                 while len(phase_terms) > 0:
                     try:
-                        res = self.search.initTerm(phase_terms[0])
+                        res = self.search.initTerm(phase_terms[0], sql_connector.getConn())
                         break
                     except SearchHandle.QueryError:
                         del phase_terms[0]
@@ -82,12 +82,12 @@ class parse_search():
                 while len(phase_terms) > 1:
                     del phase_terms[0]
                     try:
-                        res = self.search.getNewNeiResult(res, self.search.initTerm(phase_terms[0]))
+                        res = self.search.getNewNeiResult(res, self.search.initTerm(phase_terms[0], sql_connector.getConn()))
                     except SearchHandle.QueryError:
                         pass
                 qword.append(res)
 
-    def deal_with_proximity(self, queue, qword, opt):
+    def deal_with_proximity(self, queue, qword, opt, sql_connector):
         term = ''
         distance = ''
         count_space = 0
@@ -107,7 +107,7 @@ class parse_search():
         # 如果还没找到左括号就结束了，把这个词放进搜索list,返回平常方法
         if (len(queue) == 0 or queue[0] != '('):
             try:
-                qword.append(self.search.initTerm(self.preprocess_word(distance)))
+                qword.append(self.search.initTerm(self.preprocess_word(distance),sql_connector.getConn()))
             except SearchHandle.QueryError:
                 if (len(queue) > 0 and queue[0] == '('):
                     queue.popleft()
@@ -135,7 +135,7 @@ class parse_search():
         if (len(queue) == 0):
             for word in proximity_terms:
                 try:
-                    qword.append(self.search.initTerm(word))
+                    qword.append(self.search.initTerm(word, sql_connector.getConn()))
                 except SearchHandle.QueryError:
                     count_space -= 1
                     pass
@@ -145,18 +145,18 @@ class parse_search():
             queue.popleft()
             while len(proximity_terms) > 0:
                 try:
-                    self.search.initTerm(proximity_terms[0])
+                    self.search.initTerm(proximity_terms[0], sql_connector.getConn())
                     break
                 except SearchHandle.QueryError:
                     del proximity_terms[0]
                     pass
 
-            res = self.search.initTerm(proximity_terms[0])
+            res = self.search.initTerm(proximity_terms[0], sql_connector.getConn())
 
             while len(proximity_terms) > 1:
                 del proximity_terms[0]
                 try:
-                    res = self.search.getNewDisResult(res, self.search.initTerm(proximity_terms[0]), distance)
+                    res = self.search.getNewDisResult(res, self.search.initTerm(proximity_terms[0], sql_connector.getConn()), distance)
                 except SearchHandle.QueryError:
                     pass
             qword.append(res)
@@ -165,6 +165,8 @@ class parse_search():
     def getSearch(self, query):
         qword = []
         opt = []
+
+        sql_connector = SearchHandle.SqlCreator()
 
         query = self.preprocess_query(query)
 
@@ -175,10 +177,10 @@ class parse_search():
         while (len(queue) > 0):
             temp = queue.popleft()
             if temp == '#':
-                self.deal_with_proximity(queue, qword, opt)
+                self.deal_with_proximity(queue, qword, opt, sql_connector)
                 flag = 'none'
             elif temp == '"':
-                self.deal_with_phase(queue, qword, opt)
+                self.deal_with_phase(queue, qword, opt, sql_connector)
                 flag = 'none'
 
             # 空格的辨识，如果没有逻辑运算符就按OR处理
@@ -194,7 +196,7 @@ class parse_search():
                         term = ''
                     elif term == 'NOT' and flag != 'AND':
                         flag = 'none'
-                        qword.append(self.search.initTerm(self.preprocess_word(term)))
+                        qword.append(self.search.initTerm(self.preprocess_word(term), sql_connector.getConn()))
                         term = ''
                     elif term == 'OR':
                         opt.append('OR')
@@ -210,7 +212,7 @@ class parse_search():
                                 opt.append('OR')
                         if term != '':
                             try:
-                                qword.append(self.search.initTerm(self.preprocess_word(term)))
+                                qword.append(self.search.initTerm(self.preprocess_word(term), sql_connector.getConn()))
                             except SearchHandle.QueryError:
                                 if flag == 'none' and len(opt) > 0:
                                     del opt[-1]
@@ -225,7 +227,7 @@ class parse_search():
 
                     if term != '':
                         try:
-                            qword.append(self.search.initTerm(self.preprocess_word(term)))
+                            qword.append(self.search.initTerm(self.preprocess_word(term), sql_connector.getConn()))
                         except SearchHandle.QueryError:
                             pass
                     term = ''
@@ -238,12 +240,11 @@ class parse_search():
 
         if term != '':
             try:
-                qword.append(self.search.initTerm(self.preprocess_word(term)))
+                qword.append(self.search.initTerm(self.preprocess_word(term), sql_connector.getConn()))
             except SearchHandle.QueryError:
                 if len(opt) > 0:
                     del opt[-1]
                 pass
-
         if len(qword)>0:
             res = qword[0]
         else:
@@ -254,17 +255,18 @@ class parse_search():
                 print('in and not')
                 res = self.search.getNewXorResult(res, qword[0])
             if opt[0] == 'AND':
-                print('in and')
                 res = self.search.getNewAndResult(res, qword[0])
             if opt[0] == 'OR':
                 print('in or')
                 res = self.search.getNewOrResult(res, qword[0])
             del opt[0]
-            
+
         try:
-            res = self.search.newFinalize(res)
+            res = self.search.newFinalize(res, sql_connector.getConn())
         except SearchHandle.QueryError:
             return []
+
+        sql_connector.close()
 
         return res
 
@@ -272,6 +274,6 @@ class parse_search():
 if __name__ == '__main__':
     a = parse_search()
     start = time()
-    res = a.getSearch('fucking bitch')
+    res = a.getSearch('good AND sportsmanship AND sports')
     end = time()
     print(res)
