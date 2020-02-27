@@ -9,6 +9,8 @@ import time
 from collections import defaultdict
 from Test import readBM25
 
+import threading
+
 test_dict = {
     "term1": {
         "docid1": {
@@ -43,6 +45,17 @@ test_dict = {
 }
 
 
+class SqlCreator(object):
+    def __init__(self):
+        self.sqlhandle = readfromDB.handlerwithsql()
+
+    def getConn(self):
+        return self.sqlhandle
+
+    def close(self):
+        self.sqlhandle.close_session()
+
+
 class QueryError(Exception):
     def __init__(self, err='QueryError'):
         Exception.__init__(self, err)
@@ -55,37 +68,43 @@ class SearchHandle(object):
         """
         # self.total_comment = self.sqlhandle.read_count
         self.stemer = PorterStemmer()
-        self.readBM25Handle = readBM25.readfromMysqlBM25()
-        self.sqlhandle = readfromDB.handlerwithsql()
         self.fuzzy = fuzzysearch.Fuzzy()
 
         print("Initilized successfully")
 
-    def readFromMysql(self, sql):
-        comment_dict = self.sqlhandle.read2dict(sql)
+    # def getConnected(self):
+    #     self.sqlhandle = readfromDB.handlerwithsql()
+    #
+    # def closeConnected(self):
+    #     self.sqlhandle.close_session()
+
+    def readFromMysql(self, sql, connector):
+        comment_dict = connector.read2dict(sql)
         # self.sqlhandle.close_session()
         return comment_dict
 
-    def readBM25(self, term):
+    def readBM25(self, term, connector):
         """
         term : 需要查的term
         result  : dict 包含該term的所有信息
         """
         __term = [term]
-        terminfo = self.readBM25Handle.readTerm25(__term)
+        terminfo = connector.readTerm25(__term)
         return terminfo[term]
 
-    def initTerm(self, term):
+    def initTerm(self, term, connector):
         """
         term : 在組合之前需要初始化的term
         return : term 對應的DataFrame
         """
-        result = self.readBM25(term)
+        # self.getConnected()
+        result = self.readBM25(term, connector)
         if not bool(result):
             try:
-                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1])
+                result = self.readBM25(self.fuzzy.bktreeSearch(term)[0][1], connector)
             except IndexError:
                 raise QueryError('QueryError')
+        # self.closeConnected()
 
         return result
 
@@ -105,7 +124,7 @@ class SearchHandle(object):
                 if inx in term2:
                     picklist[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
                     picklist[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-            return pd.DataFrame.from_dict(picklist)
+            return picklist
         else:
             for inx in term2.keys():
                 if inx in term1:
@@ -161,7 +180,7 @@ class SearchHandle(object):
             for inx in term1.keys():
                 if inx not in term2:
                     picklist[inx] = term1[inx]
-            return pd.DataFrame.from_dict(picklist)
+            return picklist
         else:
             for inx in term2.keys():
                 if inx not in term1:
@@ -179,15 +198,6 @@ class SearchHandle(object):
     def getNewOrResult(self, term1, term2):
         term3 = defaultdict(dict)
         if len(term1) < len(term2):
-            for inx in term1.keys():
-                if inx in term2:
-                    term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
-                    term3[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
-                else:
-                    term3[inx]['pos'] = term1[inx]['pos']
-                    term3[inx]['score'] = term1[inx]['score']
-            return term3
-        else:
             for inx in term2.keys():
                 if inx in term1:
                     term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
@@ -195,6 +205,15 @@ class SearchHandle(object):
                 else:
                     term3[inx]['pos'] = term2[inx]['pos']
                     term3[inx]['score'] = term2[inx]['score']
+            return term3
+        else:
+            for inx in term1.keys():
+                if inx in term2:
+                    term3[inx]['pos'] = term1[inx]['pos'] + term2[inx]['pos']
+                    term3[inx]['score'] = term1[inx]['score'] + term2[inx]['score']
+                else:
+                    term3[inx]['pos'] = term1[inx]['pos']
+                    term3[inx]['score'] = term1[inx]['score']
             return term3
 
     def getNewDisResult(self, term1, term2, distance):
@@ -273,7 +292,7 @@ class SearchHandle(object):
 
         return deliver, sqllist
 
-    def newFinalize(self, result, mode='score'):
+    def newFinalize(self, result, connector, mode='score'):
         """
         result : type dataframe 格式爲：
                             docid1     docid2     docid100
@@ -294,19 +313,19 @@ class SearchHandle(object):
         deliver = []
         sql_comment_id = ''
 
+        if not result:
+            return []
+
         for id in __result:
             sql_comment_id += "'" + str(id[0]) + "'"
             sql_comment_id += ', '
         if len(sql_comment_id) > 0:
             sql_comment_id = sql_comment_id[:-2]
-
             sql = "select C.videoid,C.id,C.comment_text,videotitle,likecount from eoogle.comment C, eoogle.video V where C.videoid = V.videoid and C.id IN( " + sql_comment_id + ")"
-            deliver.append(self.readFromMysql(sql))
+            deliver.append(self.readFromMysql(sql, connector))
         # print(sql)
-        if not deliver:
-            raise QueryError
-        else:
-            return deliver[0]
+        #self.closeConnected()
+        return deliver[0]
 
     def sortByLikeCount(self, deliver):
         return deliver.sort(reverse=True, key=lambda k: (k.get('likecount', 0)))
@@ -318,9 +337,12 @@ if __name__ == "__main__":
     mid1 = time.time()
     print("the init time is :", mid1 - start)
 
+    connector1 = SqlCreator()
+    #connector2 = SqlCreator()
+
     start2 = time.time()
-    put = searchservice.initTerm("wait")
-    get = searchservice.initTerm("jame")
+    put = searchservice.initTerm("wait", connector1.getConn())
+    get = searchservice.initTerm("jame", connector1.getConn())
     mid2 = time.time()
     print("time of finding data from db:", mid2 - start2)
     # distance search
@@ -350,10 +372,12 @@ if __name__ == "__main__":
     print("the nei search time is: ", mid7 - start7)
 
     # full exmaple:
+    searchservice = SearchHandle()
     start8 = time.time()
-    put = searchservice.initTerm("wait")
-    get = searchservice.initTerm("jame")
+    connector1 = SqlCreator()
+    put = searchservice.initTerm("wait", connector1.getConn())
+    get = searchservice.initTerm("and", connector1.getConn())
     example_or_search = searchservice.getNewOrResult(put, get)
-    example_searchresult = searchservice.newFinalize(example_or_search)
+    example_searchresult = searchservice.newFinalize(example_or_search, connector1.getConn())
     print("the example search time is ", time.time() - start8)
-    # print(example_searchresult)
+    print(example_searchresult)

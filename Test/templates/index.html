@@ -53,6 +53,21 @@
 						animation: octocat-wave 560ms ease-in-out;
 					}
 				}
+                .pagination {
+                    display: inline-block;
+                    padding: 0;
+                    margin: 0;
+                }
+
+                .pagination li {display: inline;}
+
+                .pagination li a.active {
+                    float: left;
+                    padding: 8px 16px;
+                    text-decoration: none;
+                    background-color: #4CAF50;
+                    color: white;
+                }
 			</style>
             <div style="width: 100% ; text-align: center;">
             <img src="{% static 'images/Etube.png' %}" alt="Youtube" style="margin-top: 6.5rem; margin-bottom: 1.5rem" height = auto width="350"/>
@@ -86,7 +101,7 @@
                 {% if docs.has_previous %}
                     <li> <a href="?q={{ key }}&page={{ docs.previous_page_number }}">Previous page</a></li>
                 {% endif %}
-                <span class="current">Page {{ docs.number }}</span>
+                    <li><a>Page {{ docs.number }}</a></li>
                 {% if docs.has_next %}
                     <li><a href="?q={{ key }}&page={{ docs.next_page_number }}">Next Page</a></li>
                 {% endif %}

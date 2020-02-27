@@ -11,12 +11,22 @@ res_cache = cache.cache_all_search()
 def search(request):
     request.encoding = 'utf-8'
     context = {}
+    message = []
     if 'q' in request.GET and request.GET['q']:
         page = request.GET.get('page')
         context['key']=request.GET['q']
         if(context['key']!=res_cache.previous):
             res_cache.cache_list = query.getSearch(context['key'])
             res_cache.previous = context['key']
+        if (len(res_cache.cache_list) == 0):
+            res_cache.cache_list = [{
+                'videoid':"",
+                'videotitle':"Please enter another word",
+                'comment_text':"Sorry but no result in database"
+            }]
+            [{
+
+            }]
         paginator = Paginator(res_cache.cache_list, 10)
         try:
             message = paginator.page(page)
