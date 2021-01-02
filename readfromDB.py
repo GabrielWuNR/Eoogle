@@ -11,8 +11,8 @@ class handlerwithsql(object):
         self.read_count = 0
 
         # connect to mysql
-        self.connect = pymysql.connect(host='databasetry.c98rtvjmqwke.eu-west-2.rds.amazonaws.com', port=3306,
-                                       user='admin', passwd='12345678', db='eoogle', charset='utf8',
+        self.connect = pymysql.connect(host='', port=3306,
+                                       user='', passwd='', db='eoogle', charset='utf8',
                                        cursorclass=pymysql.cursors.DictCursor)
         print("Initilized successfully")
 
