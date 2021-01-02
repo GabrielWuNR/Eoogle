@@ -57,7 +57,7 @@ class DecimalEncoder(json.JSONEncoder):
 #         table_handle_h5_visit_info = self.get_service(table_name)
 #         """查询,根据某一key（column）查询"""
 #         response = table_handle_h5_visit_info.query(
-#             KeyConditionExpression=Key('uid').eq('f3d61094c65a42489d0e54d4c30b7e6f')
+#             KeyConditionExpression=Key('uid').eq('')
 #         )
 #         print(response)
 #         # response中包含了很多内容，response本身是个json字符串，其Items键的内容才是table中的内容
