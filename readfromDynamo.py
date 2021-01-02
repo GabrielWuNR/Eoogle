@@ -15,8 +15,8 @@ class DynamoDBService:
     def __init__(self):
         self.this_day = datetime.date.today()
         # 这两个key像是账号和密码一般，需要在后台申请导出，唯一的
-        self.AWS_ACCESS_ID = 'AKIAIBXEM26CPJQRVUXA'
-        self.AWS_ACCESS_KEY = 'Y6YmzwHi8sBF8EmWSpXJqP9H3XOCAkpvtaltZXYz'
+        self.AWS_ACCESS_ID = ''
+        self.AWS_ACCESS_KEY = ''
 
 
 
