@@ -5,9 +5,9 @@ from boto3.dynamodb.conditions import Attr, Key
 class DynamoDBService:
     def __init__(self):
         self.this_day = datetime.date.today()
-        # 这两个key像是账号和密码一般，需要在后台申请导出，唯一的
-        self.AWS_ACCESS_ID = 'AKIAIBXEM26CPJQRVUXA'
-        self.AWS_ACCESS_KEY = 'Y6YmzwHi8sBF8EmWSpXJqP9H3XOCAkpvtaltZXYz'
+       
+        self.AWS_ACCESS_ID = ''
+        self.AWS_ACCESS_KEY = ''
 
 
 
@@ -31,7 +31,7 @@ class DynamoDBService:
         table_handle_h5_visit_info = self.get_service(table_name)
         """查询,根据某一key（column）查询"""
         response = table_handle_h5_visit_info.query(
-            KeyConditionExpression=Key('uid').eq('f3d61094c65a42489d0e54d4c30b7e6f')
+            KeyConditionExpression=Key('uid').eq('')
         )
         print(response)
         # response中包含了很多内容，response本身是个json字符串，其Items键的内容才是table中的内容
